@@ -1,14 +1,46 @@
+using Revise
 using ChangeOfSupport
 using Test
+using LinearAlgebra
+
+const cs = ChangeOfSupport
 
 @testset "RegularKnots" begin
     knots = RegularKnots(-10, 10, 3, 3, 3)
-    knotrange = range(knots)
-    @test knotrange == -25:5:25
+    @test range(knots) == -25:5:25
     knots = RegularKnots(-10, 10, 3, 0, 0)
-    knotrange = range(knots)
-    @test minimum(knotrange) == -10
-    @test maximum(knotrange) == 10
+    @test range(knots) == -10.0:5.0:10.0
+    @test map(x -> cs.get_x_index(x, 1:10), [-1, 1, 9, 11]) == [0, 1, 9, 10]
+    @test map(x -> cs.get_x_index(x, 1:10), [2.1, 5.1, 7.9]) == [2, 5, 7]
+end
+
+@testset "RegularBsplines" begin
+    bs = RegularBsplines(-10, 10, 1, 10)
+    @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 9, 0, 1)
+    @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 9, 0, 0)
+    @test_throws DomainError(-11, "The values of x should lie in the range of b.") basis(-11, bs)
+    @test_throws DomainError(11, "The values of x should lie in the range of b.") basis(11, bs)
+    @test basis(-10, bs) == [1.0, zeros(9)...]
+    @test basis(-8, bs) == [0.0, 1.0, zeros(8)...]
+    @test basis(9.9, bs) == [zeros(9)..., 1.0]
+    bs = RegularBsplines(-10, 10, 2, 10)
+    @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 8, 1, 2)
+    @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 8, 0, 0)
+    @test basis(-10, bs) == [1.0, zeros(9)...]
+    @test all(basis(-8, bs)[3:end] .== 0.0)
+    @test all(basis(9.9, bs)[1:8] .== 0.0)
+    bs = RegularBsplines(-10, 10, 3, 10)
+    @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 7, 2, 3)
+    @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 7, 0, 0)
+    @test basis(-10, bs) == [0.5, 0.5, zeros(8)...]
+    @test all(basis(-8, bs)[4:end] .== 0.0)
+    @test all(basis(9.9, bs)[1:7] .== 0.0)
+end
+
+@testset "RegularBsplines on vectors" begin
+    bs = RegularBsplines(-10, 10, 1, 10)
+    @test_throws DomainError([-11, 10], "The values of x should lie in the range of b.") basis([-11, 10], bs)
+    @test basis(-10:2:8, bs) == Diagonal(ones(10))
 end
 
 # @testset "RegularBsplines" begin
@@ -17,3 +49,57 @@ end
 #     range(internalknots(b)) == -10:5:10
 # end
 
+# Meshes.ivec
+
+# g = CartesianGrid(Point(-10.0), Point(10.0), dims = (13,))
+# [coords[1] for coords in coordinates.(vertices(g))] |> diff
+#
+# g.origin
+# d
+# CartesianIndices(g.dims .+ 1)
+#
+#
+# ivec(g.origin + (ind.I .- 1) .* g.spacing for ind in inds)
+#
+#
+# g = CartesianGrid(Point(-10.0, -10.0), Point(10.0, 10.0), dims = (7,13))
+# collect(vertices(g))
+# g.origin
+# g.spacing
+# g.dims
+# inds = CartesianIndices(g.dims .+ 1)
+# (inds[2].I .- 1) .* g.spacing
+# Meshes.ivec(1:10)
+# Meshes.ivec([1, 4, 5])
+#
+# function vertices2(g::CartesianGrid)
+#   inds = CartesianIndices(g.dims .+ 1)
+#   # ivec(g.origin + (ind.I .- 1) .* g.spacing for ind in inds)
+#   # [g.origin + (ind.I .- 1) .* g.spacing for ind in inds]
+#   knotrange = StepRangeLen(
+#     Base.TwicePrecision{Float64}(0),
+#     Base.TwicePrecision{Float64}(g.spacing[1]),
+#     g.dims[1] + 1)
+# end
+# Point(1, 0) + vertices2(g)
+#
+# # g.origin
+# # + 
+# # (inds[2].I .- 1) .* g.spacing
+#
+# # [coords[1] for coords in coordinates.(vertices(g))] |> diff
+#
+#
+#
+# # grid = CartesianGrid(Point(-10.0), Point(10.0), dims = (7,))
+# # knots = [coords[1] for coords in coordinates.(vertices(grid))]
+# # diff(knots)
+#
+# # gridstep = 20.0 / 7
+# # knots2 = collect(-10.0:gridstep:10.0)
+# # diff(knots2)
+# # [knots[i] == knots2[i] for i in 1:7]
+#
+# # -10.0:7:10.0
+# # # -10, 10
+#

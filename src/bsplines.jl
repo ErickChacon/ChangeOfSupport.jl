@@ -6,7 +6,6 @@ add `order - 1` knots to the left of lower such as there are `order - 1` basis s
 the additional left knots, 1 basis starting at `lower` and the remainin basis starts at
 the `ni` internal knots (ni = df - order).
 """
-
 struct RegularBsplines
     lower::Number
     upper::Number
@@ -23,12 +22,16 @@ function boundaryknots(b::RegularBsplines)
 end
 
 function basis(x::Number, b::RegularBsplines)
-
     knots = extendedknots(b)
     knotrange = range(knots)
 
     # initial arguments
     basis = zeros(length(knotrange))
+
+    # check x inside acctable range
+    if !(b.lower ≤ x ≤ b.upper)
+        throw(DomainError(x, "The values of x should lie in the range of b."))
+    end
 
     # order 1
     x_index = get_x_index(x, knotrange)
@@ -50,7 +53,7 @@ function basis(x::Number, b::RegularBsplines)
         basis[x_index] = saved
     end
 
-    return basis[1:b.df]
+    basis[1:b.df]
 end
 
 function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
@@ -60,6 +63,11 @@ function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
 
     # initial arguments
     basis = zeros(length(x), length(knotrange))
+
+    # check x inside bsplines domain
+    if !all(b.lower ≤ val ≤ b.upper for val in x)
+        throw(DomainError(x, "The values of x should lie in the range of b."))
+    end
 
     for i in 1:length(x)
         # order 1
@@ -96,7 +104,7 @@ end
 function integral(x::Number, b::RegularBsplines)
     # define new knots and step
     b = RegularBsplines(b.lower, b.upper, b.order + 1, b.df + 1)
-    knotstep = step(range(rknots(b)))
+    knotstep = step(range(extendedknots(b)))
     # compute integral
     ibasis = basis(x, b)[2:b.df]
     knotstep * reverse(cumsum(reverse(ibasis)))
@@ -110,6 +118,23 @@ function integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     ibasis = basis(x, b)[:, 2:b.df]
     knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
 end
+
+function integral(x::CartesianGrid{1}, b::RegularBsplines)
+    gridknots = range(x)
+    ibasis = integral(gridknots, b)
+    diff(ibasis, dims = 1) ./ step(gridknots)
+end
+
+function integral(x::IrregularGrid, b::RegularBsplines)
+    gridknots = vertices(x)
+    ibasis = integral(gridknots, b)
+    diff(ibasis, dims = 1) ./ diff(gridknots)
+end
+
+
+
+
+
 
 # function interval(grid::Vector, b::RegularBsplines)
 #     bs_int = integral(grid, b)
