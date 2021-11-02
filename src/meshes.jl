@@ -1,20 +1,14 @@
-function Base.range(x::CartesianGrid{1})
-    lower = coordinates(minimum(x))[1]
-    upper = coordinates(maximum(x))[1]
-    step = spacing(x)[1]
-    lower:step:upper
+function Base.range(x::CartesianGrid{Dim}) where {Dim}
+    lower = coordinates(minimum(x))
+    upper = coordinates(maximum(x))
+    step = spacing(x)
+    [(lower[i]):(step[i]):(upper[i]) for i in 1:Dim]
 end
 
-function centroids(x::CartesianGrid{1})
+function centroids(x::CartesianGrid{Dim}) where {Dim}
     gridknots = range(x)
-    gridknots[1:end-1] .+ 0.5 * step(gridknots)
+    [knots[1:end-1] .+ 0.5 * step(knots) for knots in gridknots]
 end
-
-# function centroids(x::CartesianGrid{2})
-#     # gridknots = range(x)
-#     # gridknots[1:end-1] .+ 0.5 * step(gridknots)
-# end
-
 
 struct IrregularGrid
     minimum::Number

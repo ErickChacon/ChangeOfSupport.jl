@@ -9,8 +9,8 @@ the `ni` internal knots (ni = df - order).
 struct RegularBsplines
     lower::Number
     upper::Number
-    order::Int
     df::Int
+    order::Int
 end
 
 function extendedknots(b::RegularBsplines)
@@ -94,16 +94,9 @@ function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     return basis[:, 1:b.df]
 end
 
-# function basis(grid::Grid2, b1::RegularBsplines, b2::RegularBsplines)
-#     knots1, knots2 = range(grid)
-#     basis1 = basis(collect(knots1), b1)
-#     basis2 = basis(collect(knots2), b2)
-#     return kron(basis1, basis2)
-# end
-
 function integral(x::Number, b::RegularBsplines)
     # define new knots and step
-    b = RegularBsplines(b.lower, b.upper, b.order + 1, b.df + 1)
+    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
     knotstep = step(range(extendedknots(b)))
     # compute integral
     ibasis = basis(x, b)[2:b.df]
@@ -112,25 +105,32 @@ end
 
 function integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     # define new knots and step
-    b = RegularBsplines(b.lower, b.upper, b.order + 1, b.df + 1)
+    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
     knotstep = step(range(extendedknots(b)))
     # compute integral
     ibasis = basis(x, b)[:, 2:b.df]
     knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
 end
 
-function integral(x::CartesianGrid{1}, b::RegularBsplines)
-    gridknots = range(x)
+function basis(x::CartesianGrid{1}, b::RegularBsplines)
+    gridknots = range(x)[1]
     ibasis = integral(gridknots, b)
     diff(ibasis, dims = 1) ./ step(gridknots)
 end
 
-function integral(x::IrregularGrid, b::RegularBsplines)
-    gridknots = vertices(x)
-    ibasis = integral(gridknots, b)
-    diff(ibasis, dims = 1) ./ diff(gridknots)
-end
+# function basis(x::IrregularGrid, b::RegularBsplines)
+#     gridknots = vertices(x)
+#     ibasis = integral(gridknots, b)
+#     diff(ibasis, dims = 1) ./ diff(gridknots)
+# end
 
+
+# function basis(grid::Grid2, b1::RegularBsplines, b2::RegularBsplines)
+#     knots1, knots2 = range(grid)
+#     basis1 = basis(collect(knots1), b1)
+#     basis2 = basis(collect(knots2), b2)
+#     return kron(basis1, basis2)
+# end
 
 
 

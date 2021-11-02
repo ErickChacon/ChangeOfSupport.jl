@@ -1,5 +1,6 @@
 using Revise
 using ChangeOfSupport
+using Meshes
 using Test
 using LinearAlgebra
 
@@ -15,7 +16,7 @@ const cs = ChangeOfSupport
 end
 
 @testset "RegularBsplines" begin
-    bs = RegularBsplines(-10, 10, 1, 10)
+    bs = RegularBsplines(-10, 10, 10, 1)
     @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 9, 0, 1)
     @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 9, 0, 0)
     @test_throws DomainError(-11, "The values of x should lie in the range of b.") basis(-11, bs)
@@ -23,13 +24,13 @@ end
     @test basis(-10, bs) == [1.0, zeros(9)...]
     @test basis(-8, bs) == [0.0, 1.0, zeros(8)...]
     @test basis(9.9, bs) == [zeros(9)..., 1.0]
-    bs = RegularBsplines(-10, 10, 2, 10)
+    bs = RegularBsplines(-10, 10, 10, 2)
     @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 8, 1, 2)
     @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 8, 0, 0)
     @test basis(-10, bs) == [1.0, zeros(9)...]
     @test all(basis(-8, bs)[3:end] .== 0.0)
     @test all(basis(9.9, bs)[1:8] .== 0.0)
-    bs = RegularBsplines(-10, 10, 3, 10)
+    bs = RegularBsplines(-10, 10, 10, 3)
     @test cs.extendedknots(bs) == RegularKnots(-10.0, 10.0, 7, 2, 3)
     @test cs.boundaryknots(bs) == RegularKnots(-10.0, 10.0, 7, 0, 0)
     @test basis(-10, bs) == [0.5, 0.5, zeros(8)...]
@@ -38,9 +39,16 @@ end
 end
 
 @testset "RegularBsplines on vectors" begin
-    bs = RegularBsplines(-10, 10, 1, 10)
+    bs = RegularBsplines(-10, 10, 10, 1)
     @test_throws DomainError([-11, 10], "The values of x should lie in the range of b.") basis([-11, 10], bs)
     @test basis(-10:2:8, bs) == Diagonal(ones(10))
+end
+
+@testset "RegularGrid" begin
+    grid = CartesianGrid(Point(-10.0), Point(10.0), dims = (10,))
+    @test range(grid) == [-10.0:2.0:10.0]
+    grid = CartesianGrid(Point(-10.0, -10.0), Point(10.0, 10.0), dims = (10,20))
+    @test range(grid) == [-10.0:2.0:10.0, -10.0:1.0:10.0]
 end
 
 # @testset "RegularBsplines" begin
