@@ -51,6 +51,60 @@ end
     @test range(grid) == [-10.0:2.0:10.0, -10.0:1.0:10.0]
 end
 
+
+
+grid2 = CartesianGrid(Point(-10.0, -10.0), Point(10.0, 10.0), dims = (10,5))
+
+
+a = IrregularGrid((1, 1), (10, 10), ([7, 3, 5], [7, 1, 8]))
+minimum(a)
+
+a = IrregularGrid((1,), (10,), ([1, 3,],))
+
+a = IrregularGrid2((1,1), (10,10), ([1, 3, 5], [2, 7, 8]))
+
+
+function IrregularGrid3(minimum::NTuple{Dim,T}, maximum::NTuple{Dim,T},
+                        iknots::NTuple{Dim, Vector{T}}) where {Dim,T}
+    iknots = map(unique ∘ sort, iknots)
+    IrregularGrid3(minimum, maximum, iknots)
+end
+
+# a = IrregularGrid3((1,), (10,), ([1, 3, 5],))
+
+struct IrregularGrid4{Dim,T}
+    start::Point{Dim,T}
+    finish::Point{Dim,T}
+    iknots::NTuple{Dim, Vector{T}}
+end
+
+# CartesianGrid((100,100),(10.,20.),(1.,1.))
+
+([1, 3, 5, 6, 5], [2, 6, 7, 8, 7]) |> typeof
+[[1, 3, 5, 9, 5], [2, 6, 7, 9, 9]] |> typeof
+
+[2, 6, 7, 9, 9] |>
+# x -> Point1
+
+Point1[(1,), (2,)]
+
+
+NTuple{5,NTuple{10}}
+
+(rand(10)..., rand(10)...)
+
+
+
+a.minimum
+a.maximum
+collect(a.iknots...)
+
+CartesianGrid(Point(-10.0), Point(10.0), dims = (40,))
+
+CartesianGrid(start::Point{Dim,T}, finish::Point{Dim,T};
+              dims::Dims{Dim}=ntuple(i->100, Dim)) where {Dim,T} =
+  CartesianGrid{Dim,T}(dims, start, (finish - start) ./ dims)
+
 # @testset "RegularBsplines" begin
 #     b = RegularBsplines(-10, 10, 3, 6)
 #     @test range(allknots(b)) == -20:5:25

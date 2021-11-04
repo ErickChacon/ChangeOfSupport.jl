@@ -10,20 +10,57 @@ function centroids(x::CartesianGrid{Dim}) where {Dim}
     [knots[1:end-1] .+ 0.5 * step(knots) for knots in gridknots]
 end
 
-struct IrregularGrid
-    minimum::Number
-    maximum::Number
-    iknots::Vector
+function centroidsmat(x::CartesianGrid{Dim}) where {Dim}
+    Matrix(transpose(reduce(hcat, coordinates.(centroid.(x)))))
 end
 
-function Meshes.vertices(x::IrregularGrid)
-    [x.minimum, sort(x.iknots)..., x.maximum]
-end
 
-function centroids(x::IrregularGrid)
-    knots = vertices(x)
-    knots[1:end-1] + diff(knots) / 2
-end
+# struct IrregularGrid{Dim,T}
+#     minimum::NTuple{Dim,T}
+#     maximum::NTuple{Dim,T}
+#     iknots::NTuple{Dim, Vector{T}}
+#
+#     function IrregularGrid{Dim,T}(minimum, maximum, iknots) where {Dim,T}
+#         iknots = map(unique ∘ sort, iknots)
+#         new{Dim,T}(minimum,maximum,iknots)
+#     end
+# end
+#
+# function IrregularGrid(minimum::NTuple{Dim,T}, maximum::NTuple{Dim,T},
+#                          iknots::NTuple{Dim, Vector{T}}) where {Dim,T}
+#     IrregularGrid{Dim,T}(minimum, maximum, iknots)
+# end
+#
+# function knotset(x::IrregularGrid{Dim,T}) where {Dim,T}
+#     lower = x.minimum
+#     upper = x.maximum
+#     step = spacing(x)
+#     [(lower[i]):(step[i]):(upper[i]) for i in 1:Dim]
+# end
+#
+
+
+# IrregularGrid((1,), (10,), ([2, 5, 6]))
+
+# IrregularGrid(1, 1, 1)
+#
+# function Meshes.vertices(x::IrregularGrid)
+#     [x.minimum, sort(x.iknots)..., x.maximum]
+# end
+#
+# function centroids(x::IrregularGrid)
+#     knots = vertices(x)
+#     knots[1:end-1] + diff(knots) / 2
+# end
+#
+# grid2 = CartesianGrid(Point(-10.0), Point(10.0), dims = (40,))
+
+# struct IrregularGrid
+#     minimum::Number
+#     maximum::Number
+#     iknots::Vector
+# end
+
 
 # function marks(x::Igrid)
 #     knots = knotset(x)

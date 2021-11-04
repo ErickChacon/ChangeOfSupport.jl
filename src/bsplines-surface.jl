@@ -5,15 +5,25 @@ struct NRegularBsplines{N,T}
     order::Int
 end
 
-function basis(x, b::NRegularBsplines{N, T}) where {N, T}
+function basis(x::NTuple{N, T}, b::NRegularBsplines{N, T}) where {N, T}
     b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
-    bb = [basis(x[i], b[i]) for i in N:-1:1]
-    N == 1 ? bb[1] : kron(bb...)
+    bb = [basis(x[i], b[i]) for i in 1:N]
+    N == 1 ? bb[1] : kron(reverse(bb)...)
 end
 
+# this need to be faster
 function basis(x::Array{T, N}, b::NRegularBsplines{N, T}) where {N, T}
+    B = zeros(size(x)[1], prod(b.df))
     b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
     bb = [basis(x[:, i], b[i]) for i in N:-1:1]
-    N == 1 ? bb[1] : kron(bb...)
+    @time N == 1 ? bb[1] : kron.(eachrow.(bb)...) |> x -> Matrix(transpose(reduce(hcat, x)))
+end
+
+function basis(x::CartesianGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
+    b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
+    gridknots = range(x)
+    ibasis = [integral(gridknots[i], b[i]) for i in 1:N]
+    ibasis = [diff(ibasis[i], dims = 1) ./ step(gridknots[i]) for i in 1:N]
+    N == 1 ? ibasis[1] : kron(reverse(ibasis)...)
 end
 
