@@ -14,7 +14,6 @@ function centroidsmat(x::CartesianGrid{Dim}) where {Dim}
     Matrix(transpose(reduce(hcat, coordinates.(centroid.(x)))))
 end
 
-
 struct IrregularGrid{Dim,T}
     minimum::NTuple{Dim,T}
     maximum::NTuple{Dim,T}
