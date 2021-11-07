@@ -4,16 +4,14 @@ using Meshes
 
 include("knots.jl")
 include("meshes.jl")
-include("bsplines.jl")
-include("bsplines-surface.jl")
+include("rbsplines.jl")
+include("nrbsplines.jl")
 # include("igmrf.jl")
 
 export RegularKnots, extendedknots, boundaryknots
 
-export RegularBsplines, basis, integral, centroids
+export RegularBsplines, NRegularBsplines, basis, integral, centroids, centroidsmat
 
-export centroidsmat
-
-export NRegularBsplines
+export IrregularGrid, knotset
 
 end # module

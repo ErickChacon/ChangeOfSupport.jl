@@ -27,3 +27,11 @@ function basis(x::CartesianGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
     N == 1 ? ibasis[1] : kron(reverse(ibasis)...)
 end
 
+function basis(x::IrregularGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
+    b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
+    gridknots = knotset(x)
+    ibasis = [integral(gridknots[i], b[i]) for i in 1:N]
+    ibasis = [diff(ibasis[i], dims = 1) ./ diff(gridknots[i]) for i in 1:N]
+    N == 1 ? ibasis[1] : kron(reverse(ibasis)...)
+end
+

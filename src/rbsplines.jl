@@ -118,65 +118,35 @@ function basis(x::CartesianGrid{1}, b::RegularBsplines)
     diff(ibasis, dims = 1) ./ step(gridknots)
 end
 
-# function basis(x::IrregularGrid, b::RegularBsplines)
-#     gridknots = vertices(x)
-#     ibasis = integral(gridknots, b)
-#     diff(ibasis, dims = 1) ./ diff(gridknots)
-# end
-
-
-# function basis(grid::Grid2, b1::RegularBsplines, b2::RegularBsplines)
-#     knots1, knots2 = range(grid)
-#     basis1 = basis(collect(knots1), b1)
-#     basis2 = basis(collect(knots2), b2)
-#     return kron(basis1, basis2)
-# end
+function basis(x::IrregularGrid{1}, b::RegularBsplines)
+    gridknots = knotset(x)[1]
+    ibasis = integral(gridknots, b)
+    diff(ibasis, dims = 1) ./ diff(gridknots)
+end
 
 
 
-
-
-# function interval(grid::Vector, b::RegularBsplines)
-#     bs_int = integral(grid, b)
-#     return diff(bs_int, dims = 1) ./ diff(grid)
+# function igmrf_marks(order, lower, upper, df)
+#
+#     n_internal = df - order
+#     step = (upper - lower) / (n_internal + 1)
+#
+#     upper = upper + step * (order)
+#     lower = lower - step * (order - 1)
+#     knots = lower:step:upper
+#     knots = knots[1:(end-order-1)] .+ step * order / 2
+#     return knots
 # end
 #
-# # function igmrf_marks(order, lower, upper, df)
-# #
-# #     n_internal = df - order
-# #     step = (upper - lower) / (n_internal + 1)
-# #
-# #     upper = upper + step * (order)
-# #     lower = lower - step * (order - 1)
-# #     knots = lower:step:upper
-# #     knots = knots[1:(end-order-1)] .+ step * order / 2
-# #     return knots
-# # end
-# #
-# # function igmrf_knots(order, lower, upper, df)
-# #
-# #     n_internal = df - order
-# #     step = (upper - lower) / (n_internal + 1)
-# #
-# #     upper = upper + step * (order)
-# #     lower = lower - step * (order - 1)
-# #     knots = lower:step:upper + step
-# #     return knots[1:(end-order-1)]
-# # end
-# #
-# # function grid_markers(min, max, length)
-# #     step = (max - min) / (length - 1)
-# #     return (min:step:max)[2:end] .- step / 2
-# # end
-# #
+# function igmrf_knots(order, lower, upper, df)
 #
-# function marks(b::RegularBsplines)
-#     knots = range(rknots(b))[1:b.df]
-#     return knots .+ 0.5 * b.order * step(knots)
+#     n_internal = df - order
+#     step = (upper - lower) / (n_internal + 1)
+#
+#     upper = upper + step * (order)
+#     lower = lower - step * (order - 1)
+#     knots = lower:step:upper + step
+#     return knots[1:(end-order-1)]
 # end
 #
-#
-# # function rstep(b::RegularBsplines)
-# #    return step(range(rknots(b)))
-# # end
-#
+
