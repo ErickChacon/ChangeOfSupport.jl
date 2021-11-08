@@ -1,3 +1,8 @@
+struct IGMRF{N,T}
+    grid::CartesianGrid{N,T}
+    order::Number
+end
+
 # function to convert i,j cel to k-index
 function ij_to_k(i, j, n1, n2)
     j + (i - 1) * n2
@@ -78,7 +83,7 @@ end
 # build circulant base of a igmrf
 function igmrf_precision_base(n1::Int, n2::Int; δ = 0.01, k = 1)
     n = n1 * n2
-    base = zeros(n1, n2)
+    base = zeros(n2, n1)
     if k == 1
         base[1, 1] = 4 + δ
         base[1, 2] = -1
@@ -103,25 +108,47 @@ function igmrf_precision_base(n1::Int, n2::Int; δ = 0.01, k = 1)
     return base
 end
 
-# simulate igmrf
-function igmrf_simulate(dims; δ = 0.01, k = 1, border = 0)
+# # simulate igmrf
+# function igmrf_simulate(dims; δ = 0.01, k = 1, border = 0)
+#     n = prod(dims)
+#
+#     # define base
+#     base = igmrf_precision_base(dims..., k = k)
+#
+#     # compute eigenvalues
+#     λ = sqrt(n) * fft(base)
+#
+#     # simulate
+#     z = randn(dims...) + randn(dims...) * im
+#     x = real(fft(λ .^ (-1/2) .* z))
+#
+#     # edge effects
+#     if length(dims) == 1
+#         return x[border + 1:n - border]
+#     elseif length(dims) == 2
+#         return x[border + 1:dims[1] - border, border + 1:dims[2] - border]
+#     end
+# end
+
+function simulate(igmrf::IGMRF{N,T}; δ = 0.01, border = 0) where {N,T}
+    dims = igmrf.grid.dims
     n = prod(dims)
 
     # define base
-    base = igmrf_precision_base(dims..., k = k)
+    base = igmrf_precision_base(dims..., k = igmrf.order)
 
     # compute eigenvalues
     λ = sqrt(n) * fft(base)
 
     # simulate
-    z = randn(dims...) + randn(dims...) * im
+    z = randn(reverse(dims)...) + randn(reverse(dims)...) * im
     x = real(fft(λ .^ (-1/2) .* z))
 
     # edge effects
     if length(dims) == 1
         return x[border + 1:n - border]
     elseif length(dims) == 2
-        return x[border + 1:dims[1] - border, border + 1:dims[2] - border]
+        return x[border + 1:dims[2] - border, border + 1:dims[1] - border]
     end
 end
 
