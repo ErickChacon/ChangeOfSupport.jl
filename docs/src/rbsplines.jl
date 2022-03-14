@@ -15,7 +15,7 @@ gr(dpi = 250)
 #' Regular B-splines can be defined by providing the boundary knots (minimum and maximum),
 #' the degree of freedom and de order.
 n = 7
-bs = RegularBsplines(-10, 10, 7, 3)
+bs = RegularBsplines(-10, 10, n, 3)
 
 #' ### Evaluating the Bsplines (i)
 #' The basis functions for the Bsplines evaluated at `x` can be obtained with the function
