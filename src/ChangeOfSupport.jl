@@ -1,5 +1,6 @@
 module ChangeOfSupport
 
+using Random
 using Meshes
 using SparseArrays
 using FFTW
@@ -29,6 +30,6 @@ export sample_gam, igmrf_precision_1_t
 
 export adjacency, structure_base, CGMRF, precision, structure
 
-export RGMRF
+export RGMRF, myrand
 
 end # module

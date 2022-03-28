@@ -1,3 +1,10 @@
+# This file needs to be modified to represent a general IGMRF.
+
+"""
+    IGMRF(grid, order)
+
+Regular Gaussian Markov random fields.
+"""
 struct IGMRF{N,T}
     grid::CartesianGrid{N,T}
     order::Number

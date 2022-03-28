@@ -1,9 +1,9 @@
 """
     CGMRF(grid, order, δ, κ)
 
-Circulant Gaussian Markov random fields.
+Circulant Gaussian Markov random fields with n-th order, δ as and κ as precision.
 """
-struct CGMRF{N,T}
+struct CGMRF{N,T} <: ContinuousMultivariateDistribution
     grid::CartesianGrid{N,T}
     order::Integer
     δ::Number
@@ -60,9 +60,10 @@ function structure(X::CGMRF{1,T}) where {T}
     end
 end
 
+Base.length(X::CGMRF) = nelements(X.grid)
 
-function Base.rand(X::CGMRF{N,T}; border = 0) where {N,T}
-    dims = X.grid.dims
+function Distributions._rand!(rng::AbstractRNG, X::CGMRF, x::AbstractVector{T}) where T<:Real
+    dims = size(X.grid)
     n = prod(dims)
 
     # define base
@@ -72,14 +73,14 @@ function Base.rand(X::CGMRF{N,T}; border = 0) where {N,T}
     λ = fft(base)
 
     # simulate
-    z = randn(reverse(dims)...) + randn(reverse(dims)...) * im
-    x = real(fft(λ .^ (-1/2) .* z) / sqrt(n))
-    x = x / sqrt(X.κ)
+    z = randn(rng, Complex{T}, reverse(dims))
+    x = vec(real(fft(λ .^ (-1/2) .* z)))
+    ldiv!(sqrt(n * X.κ), x)
 
-    # edge effects
-    if length(dims) == 1
-        x[border + 1:n - border]
-    elseif length(dims) == 2
-        x[border + 1:dims[2] - border, border + 1:dims[1] - border]
-    end
+    return x
 end
+
+# function Distributions._logpdf(X::CGMRF, x::AbstractVector{T}) where T<:Real
+#
+# end
+

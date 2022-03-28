@@ -1,7 +1,7 @@
 """
     RGMRF(grid, order, δ, κ)
 
-Regular Gaussian Markov random fields.
+Regular Gaussian Markov random field with n-th order, δ as and κ as precision.
 """
 struct RGMRF{N,T}
     grid::CartesianGrid{N,T}
@@ -26,3 +26,4 @@ function Base.rand(X::RGMRF{N,T}) where {N,T}
     x = cholesky(R).UP \ randn(n)
     x / sqrt(X.κ)
 end
+
