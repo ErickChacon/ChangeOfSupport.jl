@@ -11,6 +11,7 @@ include("knots.jl")
 include("meshes.jl")
 include("rbsplines.jl")
 include("nrbsplines.jl")
+include("gmrf.jl")
 include("igmrf.jl")
 include("cgmrf.jl")
 include("rgmrf.jl")
@@ -28,8 +29,10 @@ export igmrf_knots, igmrf_marks, igmrf_simulate
 
 export sample_gam, igmrf_precision_1_t
 
-export adjacency, structure_base, CGMRF, precision, structure
+export adjacency, adjacency_cyclic, structure_base, CGMRF, precision, structure, structure_cyclic
 
-export RGMRF, myrand
+export RGMRF
+
+export GMRF, plop
 
 end # module

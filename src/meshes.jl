@@ -27,6 +27,32 @@ function adjacency(g::CartesianGrid{1})
     sparse(vcat(Ir, Jr), vcat(Jr, Ir), true, n, n)
 end
 
+function adjacency(g::CartesianGrid{1})
+    n = g.dims[1]
+
+    # neighbors to the right (→)
+    Ir = 1:(n-1)
+    Jr = 2:n
+    # neighbors to the left (←) are obtained by exchanging the I and J indices.
+
+    # sparse adjacency matrix
+    sparse(vcat(Ir, Jr), vcat(Jr, Ir), true, n, n)
+end
+
+function adjacency_cyclic(g::CartesianGrid{1})
+    n = g.dims[1]
+
+    # neighbors to the right (→)
+    Ir = 1:(n-1)
+    Jr = 2:n
+    Irc = n
+    Jrc = 1
+    # neighbors to the left (←) are obtained by exchanging the I and J indices.
+
+    # sparse adjacency matrix
+    sparse(vcat(Ir, Irc, Jr, Jrc), vcat(Jr, Jrc, Ir, Irc), true, n, n)
+end
+
 # get adjacency matrix of CartesianGrid
 function adjacency(g::CartesianGrid{2})
     n1, n2 = g.dims
