@@ -1,20 +1,18 @@
 """
     GMRF(S, κ)
 
-Gaussian Markov random field with precision matrix Q = κ×S.
+Construct a Gaussian Markov random field  with zero mean and precision matrix `Q = κS`.
 """
 struct GMRF <: ContinuousMultivariateDistribution
-    μ::AbstractVector
     S::AbstractMatrix
     κ::Real
 end
 
-Base.length(d::GMRF) = length(d.μ)
+Base.length(d::GMRF) = size(d.S, 1)
 
-# TODO: This function needs to reduce allocations
 function Distributions._rand!(rng::AbstractRNG, d::GMRF, x::AbstractVector{T}) where T<:Real
-    n = length(d)
-    copyto!(x, cholesky(d.S).UP \ randn(rng, n))
+    randn!(rng, x)
+    copyto!(x, cholesky(d.S).UP \ x)
     ldiv!(sqrt(d.κ), x)
     return x
 end
@@ -26,6 +24,13 @@ function Distributions._logpdf(d::GMRF, x::AbstractVector{T}) where T<:Real
     logpdf += 0.5 * (n * log(d.κ) + logdet(chol))
     logpdf -= 0.5 * d.κ * x' * d.S * x
     return(logpdf)
+end
+
+# SUITE SPARSE FIXES TO WORK WITH SUBARRAYS -------------------------------------
+
+# This functions is required for the default Distributions.rand!
+function (\)(L::FactorComponent, b::AbstractVector)
+    reshape(Matrix(L \ Dense(b)), length(b))
 end
 
 # PENALTY STRUCTURES BASES ------------------------------------------------------

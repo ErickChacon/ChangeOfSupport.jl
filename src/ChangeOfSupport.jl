@@ -5,7 +5,9 @@ using Meshes
 using SparseArrays
 using FFTW
 using LinearAlgebra # cholesky
+import LinearAlgebra: (\)
 using Distributions # Gamma
+import SuiteSparse.CHOLMOD: FactorComponent, Dense
 
 include("knots.jl")
 include("meshes.jl")
@@ -33,6 +35,6 @@ export adjacency, adjacency_cyclic, structure_base, CGMRF, precision, structure,
 
 export RGMRF
 
-export GMRF, plop
+export GMRF, plop, old_rand!
 
 end # module

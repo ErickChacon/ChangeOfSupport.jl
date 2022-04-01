@@ -12,14 +12,61 @@ using ChangeOfSupport
 using StatsBase
 using LinearAlgebra
 using Distributions
+using SparseArrays
 # using PDMats
+
+# A = [2 1 1; 1 2 0; 1 0 2]
+# C = cholesky(sparse(A))
 
 gr(dpi = 250)
 
 #' ## One-dimensional IGMRF
 
-#' Defining a grid.
-tgrid = CartesianGrid((-10.0,), (10.0,), dims = (5,))
+tgrid = CartesianGrid((-10.0,), (10.0,), dims = (1000,))
+S = structure(tgrid, δ = 0.01, order = 1);
+gmrf = GMRF(S, 1)
+@time bla = rand(gmrf, 5)
+plot(bla)
+
+x = zeros(length(gmrf))
+@time Distributions._rand!(MersenneTwister(0), gmrf, x);
+@time old_rand!(MersenneTwister(0), gmrf, x);
+
+X = zeros(length(gmrf), 2)
+@time Distributions.rand!(MersenneTwister(0), gmrf, X)
+
+
+xi = Distributions.eachvariate(X, Distributions.variate_form(typeof(gmrf)))
+
+ch = cholesky(S)
+plop(ch.L)
+
+ChangeOfSupport.ppp(ch.UP, X[:, 1])
+ch.L \ X[:, 1]
+ch.UP \ xi[2]
+typeof(xi[1]) <: Vector
+typeof(X[1:4, 1])
+typeof(ch.UP) <: AbstractMatrix
+
+import LinearAlgebra: (\)
+function (\)(L::SuiteSparse.CHOLMOD.FactorComponent, b::AbstractVector)
+    reshape(Matrix(L\SuiteSparse.CHOLMOD.Dense(b)), length(b))
+end
+
+SuiteSparse.CHOLMOD.Dense(xi[1])
+
+length(xi[1])
+Dense(xi[1])
+
+
+
+rand!(MersenneTwister(0), gmrf, xi[1])
+rand!(MersenneTwister(0), gmrf, X[:, 1])
+typeof(xi[1]) <: AbstractVector
+
+# AbstractVector <: AbstractArray
+
+
 adjacency(tgrid)
 structure_cyclic(tgrid)
 structure(tgrid)
