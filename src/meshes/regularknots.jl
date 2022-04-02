@@ -23,7 +23,7 @@ function Base.range(x::RegularKnots)
     return knotrange
 end
 
-# get index i such as knots[i] ≤ x < knots[i+1]
+# get index i such as knots[i] ≤ x < knots[i+1]. This is mainly used to compute bsplines.
 function get_x_index(x::Number, knots::AbstractRange)
 
     # check if x is inside the range
