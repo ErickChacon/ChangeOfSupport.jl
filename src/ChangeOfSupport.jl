@@ -1,8 +1,8 @@
 module ChangeOfSupport
 
-export RegularKnots, RectilinearGrid
+export RegularKnots, RectilinearGrid, adjacency, difference, structure
 using Meshes
-import SparseArrays: sparse
+import SparseArrays: sparse, spdiagm, I
 include("meshes.jl")
 
 # using Random

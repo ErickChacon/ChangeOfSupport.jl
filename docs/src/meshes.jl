@@ -9,6 +9,8 @@ using Revise
 using ChangeOfSupport
 using Meshes
 const CS = ChangeOfSupport
+using Plots
+using LinearAlgebra
 
 #' ## Regular Notes
 
@@ -42,13 +44,22 @@ tgrid = CartesianGrid(Point(-100.0), Point(100.0), dims = (10,))
 range(tgrid)
 CS.centroids(tgrid)
 CS.centroidsmat(tgrid)
-CS.adjacency(tgrid)
-CS.adjacency_cyclic(tgrid)
+adjacency(tgrid)
+adjacency(tgrid, order = 2, cyclic = true)
+
+difference(tgrid)
+difference(tgrid, order = 2, cyclic = true)
+
+structure(tgrid)
+structure(tgrid, order = 2, cyclic = true)
 
 #' ## CartesianGrid 2d
 
-sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (3,5))
+sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (3,4))
 range(sgrid)
 CS.centroids(sgrid)
 CS.centroidsmat(sgrid)
-CS.adjacency(sgrid)
+A = adjacency(sgrid, order = 2, cyclic = true)
+
+(2 + 0.001)I - A
+

@@ -1,3 +1,5 @@
+## Basic methods for CartesianGrid
+
 function Base.range(x::CartesianGrid{Dim}) where {Dim}
     lower = coordinates(minimum(x))
     upper = coordinates(maximum(x))
@@ -14,53 +16,82 @@ function centroidsmat(x::CartesianGrid{Dim}) where {Dim}
     Matrix(transpose(reduce(hcat, coordinates.(centroid.(x)))))
 end
 
-# get adjacency matrix of CartesianGrid
-function adjacency(g::CartesianGrid{1})
-    n = g.dims[1]
+## Adjacency sparse matrix of CartesianGrid (temporal, spatial)
+
+function adjacency(g::CartesianGrid{1}; order = 1, cyclic = false)
+    n = nelements(g)
 
     # neighbors to the right (→)
-    Ir = 1:(n-1)
-    Jr = 2:n
-    # neighbors to the left (←) are obtained by exchanging the I and J indices.
+    if cyclic
+        Ir = 1:n
+        Jr = mod1.(Ir .+ order, n)
+    else
+        Ir = 1:(n - order)
+        Jr = (1 + order):n
+    end
 
     # sparse adjacency matrix
-    sparse(vcat(Ir, Jr), vcat(Jr, Ir), true, n, n)
+    A = sparse(Ir, Jr, true, n, n)
+    A .| A'
 end
 
-function adjacency_cyclic(g::CartesianGrid{1})
-    n = g.dims[1]
-
-    # neighbors to the right (→)
-    Ir = 1:(n-1)
-    Jr = 2:n
-    Irc = n
-    Jrc = 1
-    # neighbors to the left (←) are obtained by exchanging the I and J indices.
-
-    # sparse adjacency matrix
-    sparse(vcat(Ir, Irc, Jr, Jrc), vcat(Jr, Jrc, Ir, Irc), true, n, n)
-end
-
-# get adjacency matrix of CartesianGrid
-function adjacency(g::CartesianGrid{2})
-    n1, n2 = g.dims
-    n = n1 * n2
+function adjacency(g::CartesianGrid{2}; order = 1, cyclic = false)
+    n1, n2 = size(g)
+    n = nelements(g)
 
     # function to convert i,j cel to k-index (CartesianGrid)
     function ij_to_k(i, j, n1, n2)
-        i + (j - 1) * n1
+        (j - 1) * n1 + i
     end
 
-    # neighbors to the right (→)
-    Ir = [ij_to_k(i, j, n1, n2) for i = 1:(n1-1) for j = 1:n2]
-    Jr = [ij_to_k(i + 1, j, n1, n2) for i = 1:(n1-1) for j = 1:n2]
-    # neighbors to the top (↑)
-    It = [ij_to_k(i, j, n1, n2) for i = 1:n1 for j = 1:(n2-1)]
-    Jt = [ij_to_k(i, j + 1, n1, n2) for i = 1:n1 for j = 1:(n2-1)]
-    # neighbors to the left (←) and bottom (↓) are obtained by exchanging the I and J
-    # indices.
+    if cyclic
+        # neighbors to the right (→)
+        Ir = [ij_to_k(i, j, n1, n2) for i = 1:n1 for j = 1:n2]
+        Jr = [ij_to_k(mod1(i + order, n1), j, n1, n2) for i = 1:n1 for j = 1:n2]
+        # neighbors to the top (↑)
+        It = Ir
+        Jt = [ij_to_k(i, mod1(j + order, n2), n1, n2) for i = 1:n1 for j = 1:n2]
+    else
+        # neighbors to the right (→)
+        Ir = [ij_to_k(i, j, n1, n2) for i = 1:(n1-order) for j = 1:n2]
+        Jr = [ij_to_k(i + order, j, n1, n2) for i = 1:(n1-order) for j = 1:n2]
+        # neighbors to the top (↑)
+        It = [ij_to_k(i, j, n1, n2) for i = 1:n1 for j = 1:(n2-order)]
+        Jt = [ij_to_k(i, j + order, n1, n2) for i = 1:n1 for j = 1:(n2-order)]
+    end
 
     # sparse adjacency matrix
-    sparse(vcat(Ir, It, Jr, Jt), vcat(Jr, Jt, Ir, It), true, n, n)
+    A = sparse(vcat(Ir, It), vcat(Jr, Jt), true, n, n)
+    A .| A'
 end
 
+## Differences and structure for GMRF
+
+function difference(g::CartesianGrid{1}; order = 1, cyclic = false)
+    n = nelements(g)
+
+    if order == 1 && !cyclic
+        return spdiagm(n-1, n, 0 => fill(-1, n-1), 1 => fill(1, n-1))
+    end
+
+    if order == 1 && cyclic
+        return spdiagm(0 => fill(-1, n), 1 => fill(1, n-1), -(n-1) => fill(1, 1))
+    end
+
+    if order == 2 && !cyclic
+        return spdiagm(n-2, n,
+                       0 => fill(1, n-2), 1 => fill(-2, n-2), 2 => fill(1, n-2))
+    end
+
+    if order == 2 && cyclic
+        return spdiagm(0 => fill(1, n), 1 => fill(-2, n-1), 2 => fill(1, n-2),
+                       -(n-2) => fill(1, 2), -(n-1) => fill(-2, 1))
+    end
+
+    throw(ErrorException("not implemented"))
+end
+
+function structure(g::CartesianGrid{1}; δ = 0, order = 1, cyclic = false)
+    D = difference(g, order = order, cyclic = cyclic)
+    D'D + δ * I
+end
