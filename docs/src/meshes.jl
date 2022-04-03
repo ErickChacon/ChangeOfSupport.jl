@@ -51,7 +51,7 @@ difference(tgrid)
 difference(tgrid, order = 2, cyclic = true)
 
 structure(tgrid)
-structure(tgrid, order = 2, cyclic = true)
+structure(tgrid, δ = 0.001, order = 2, cyclic = true)
 
 #' ## CartesianGrid 2d
 
