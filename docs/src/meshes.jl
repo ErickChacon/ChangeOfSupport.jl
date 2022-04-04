@@ -55,11 +55,12 @@ structure(tgrid, δ = 0.001, order = 2, cyclic = true)
 
 #' ## CartesianGrid 2d
 
-sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (3,4))
+sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (5,5))
 range(sgrid)
 CS.centroids(sgrid)
 CS.centroidsmat(sgrid)
-A = adjacency(sgrid, order = 2, cyclic = true)
 
-(2 + 0.001)I - A
+adjacency(sgrid, order = 1)
+difference(sgrid, order = 2, cyclic = false)
+structure(sgrid, order = 2, cyclic = false)
 
