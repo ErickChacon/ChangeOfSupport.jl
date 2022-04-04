@@ -140,17 +140,15 @@ function difference(g::CartesianGrid{2}; order = 1, cyclic = false)
            )
     end
 
+    # TODO: need improvement and test
     if order == 2 && !cyclic
-        Iir = [ij_to_k(i, j, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
-        # neighbors to the right (→)
+        # inside cells
+        Ir = [ij_to_k(i, j, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
         Jir = [ij_to_k(i + 1, j, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
-        # neighbors to the top (↑)
         Jit = [ij_to_k(i, j + 1, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
-        # neighbors to the left (←)
         Jil = [ij_to_k(i - 1, j, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
-        # neighbors to the bottom (↓)
         Jib = [ij_to_k(i, j - 1, n1, n2) for i = 2:(n1-1) for j = 2:(n2-1)]
-        # sides
+        # sides cells
         Isl = [ij_to_k(1, j, n1, n2) for j = 2:(n2-1)]
         Jsl1 = [ij_to_k(1 + 1, j, n1, n2) for j = 2:(n2-1)]
         Jsl2 = [ij_to_k(1, j + 1, n1, n2) for j = 2:(n2-1)]
@@ -171,7 +169,7 @@ function difference(g::CartesianGrid{2}; order = 1, cyclic = false)
         Js = vcat(Jsl1, Jsr1, Jst1, Jsb1,
                   Jsl2, Jsr2, Jst2, Jsb2,
                   Jsl3, Jsr3, Jst3, Jsb3)
-        # corners
+        # corners cells
         Ic1 = ij_to_k(1, 1, n1, n2)
         Jc1 = [ij_to_k(1 + 1, 1, n1, n2), ij_to_k(1, 1 + 1, n1, n2)]
         Ic2 = ij_to_k(1, n2, n1, n2)
@@ -183,12 +181,12 @@ function difference(g::CartesianGrid{2}; order = 1, cyclic = false)
         Ic = vcat(Ic1, Ic2, Ic3, Ic4)
         Jc = vcat(Jc1[1], Jc2[1], Jc3[1], Jc4[1], Jc1[2], Jc2[2], Jc3[2], Jc4[2])
         return sparse(
-            vcat(repeat(1:length(Iir), 5),
-                 repeat((1:length(Is)) .+ length(Iir), 4),
-                 repeat((1:length(Ic)) .+ length(Iir) .+ length(Is), 3),
+            vcat(repeat(1:length(Ir), 5),
+                 repeat((1:length(Is)) .+ length(Ir), 4),
+                 repeat((1:length(Ic)) .+ length(Ir) .+ length(Is), 3),
                 ),
-            vcat(Iir, Jir, Jit, Jil, Jib, Is, Js, Ic, Jc),
-            vcat(repeat([-4, 1, 1, 1, 1], inner = length(Iir)),
+            vcat(Ir, Jir, Jit, Jil, Jib, Is, Js, Ic, Jc),
+            vcat(repeat([-4, 1, 1, 1, 1], inner = length(Ir)),
                  repeat([-3, 1, 1, 1], inner = length(Is)),
                  repeat([-2, 1, 1], inner = length(Ic)),
                 )
