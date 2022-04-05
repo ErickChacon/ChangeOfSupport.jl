@@ -1,4 +1,4 @@
-# Methods for structs defined in Meshes.jl and additional meshes-related structs.
+# Methods for abstract gmrf struct and subtypes as gmrf, rgmrf, cgmrf.
 
 for filename in ["abstract.jl", "gmrf.jl", "rgmrf.jl", "cgmrf.jl"]
     include(joinpath("gmrf", filename))

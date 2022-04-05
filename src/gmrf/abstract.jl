@@ -3,7 +3,7 @@
 
 Construct a Gaussian Markov random field  with zero mean and precision matrix `Q = κS`.
 """
-abstract type AbstractGMRF <: ContinuousMultivariateDistribution end
+abstract type AbstractGMRF <: Distributions.ContinuousMultivariateDistribution end
 
 ## Random generator
 

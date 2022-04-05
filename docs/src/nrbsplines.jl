@@ -37,7 +37,7 @@ scatter!(marks, Bc, xerr = step(marks) / 2, legend = false,
 vline!(range(tgrid)[1], c = :gray, lw = 0.5, ls = :dash)
 
 #' Measure Bsplines over a rectilinear grid (iv)
-igrid = IrregularGrid((-100.0,), (100.0,), (-100 .+ rand(10) * 200,))
+igrid = RectilinearGrid((-100.0,), (100.0,), (-100 .+ rand(10) * 200,))
 Bc = basis(igrid, bs)
 
 gridknots = knotset(igrid)[1]
@@ -59,8 +59,8 @@ basis((10.0, 10.0), bs)
 
 #' Evaluating the Bsplines (ii)
 sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (100, 80))
-coords = centroidsmat(sgrid)
-Bs = basis(coords, bs)
+coordins = centroidsmat(sgrid)
+Bs = basis(coordins, bs)
 
 # heatmap(transpose(reshape(Bs[:, 9], 100, 80)))
 plot(
@@ -92,7 +92,7 @@ plot(
 )
 
 #' Measure Bsplines over a rectilinear grid (iv)
-sgrid = IrregularGrid((-100.0, -100.0), (100.0, 100.0),
+sgrid = RectilinearGrid((-100.0, -100.0), (100.0, 100.0),
                       (-100 .+ rand(10) * 200, -100 .+ rand(10) * 200))
 Bc = basis(sgrid, bs)
 

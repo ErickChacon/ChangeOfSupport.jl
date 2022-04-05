@@ -1,18 +1,23 @@
 module ChangeOfSupport
 
-export RegularKnots, RectilinearGrid, adjacency, difference, structure
 using Meshes
-import SparseArrays: sparse, spdiagm, I
+import Meshes
+import SparseArrays: sparse, spdiagm
 include("meshes.jl")
+export RegularKnots, RectilinearGrid, adjacency, difference, structure
+export centroids, knotset, centroidsmat
 
-export GMRF, RGMRF, CGMRF
 import SuiteSparse # this is only for fixes
 import FFTW
-import Distributions: ContinuousMultivariateDistribution, Distributions
+import Distributions
 import Random: AbstractRNG, randn!
 import LinearAlgebra: cholesky, ldiv!, LinearAlgebra
 include("gmrf.jl")
+export GMRF, RGMRF, CGMRF
 
+include("bsplines.jl")
+export RegularBsplines, NRegularBsplines, basis, integral, boundaryknots, extendedknots
+export startingknots, centroidknots
 
 # using Random
 # using SparseArrays
