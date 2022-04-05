@@ -9,284 +9,72 @@ using Revise
 using Meshes
 using Plots
 using ChangeOfSupport
-using StatsBase
-using LinearAlgebra
 using Distributions
-using SparseArrays
+# using StatsBase
+# using LinearAlgebra
+# using Distributions
+# using SparseArrays
 # using PDMats
-
-# A = [2 1 1; 1 2 0; 1 0 2]
-# C = cholesky(sparse(A))
+const CS = ChangeOfSupport
 
 gr(dpi = 250)
 
-#' ## One-dimensional IGMRF
+#' ## GMRF
 
-tgrid = CartesianGrid((-10.0,), (10.0,), dims = (1000,))
-S = structure(tgrid, δ = 0.01, order = 1);
-gmrf = GMRF(S, 1)
-@time bla = rand(gmrf, 5)
-plot(bla)
+#' ### One-dimensional
 
-x = zeros(length(gmrf))
-@time Distributions._rand!(MersenneTwister(0), gmrf, x);
-@time old_rand!(MersenneTwister(0), gmrf, x);
-
-X = zeros(length(gmrf), 2)
-@time Distributions.rand!(MersenneTwister(0), gmrf, X)
-
-
-xi = Distributions.eachvariate(X, Distributions.variate_form(typeof(gmrf)))
-
-ch = cholesky(S)
-plop(ch.L)
-
-ChangeOfSupport.ppp(ch.UP, X[:, 1])
-ch.L \ X[:, 1]
-ch.UP \ xi[2]
-typeof(xi[1]) <: Vector
-typeof(X[1:4, 1])
-typeof(ch.UP) <: AbstractMatrix
-
-import LinearAlgebra: (\)
-function (\)(L::SuiteSparse.CHOLMOD.FactorComponent, b::AbstractVector)
-    reshape(Matrix(L\SuiteSparse.CHOLMOD.Dense(b)), length(b))
-end
-
-SuiteSparse.CHOLMOD.Dense(xi[1])
-
-length(xi[1])
-Dense(xi[1])
-
-
-
-rand!(MersenneTwister(0), gmrf, xi[1])
-rand!(MersenneTwister(0), gmrf, X[:, 1])
-typeof(xi[1]) <: AbstractVector
-
-# AbstractVector <: AbstractArray
-
-
-adjacency(tgrid)
-structure_cyclic(tgrid)
-structure(tgrid)
-
-#' Defining an IGMRF with one neighbour per side.
-cgmrf = CGMRF(tgrid, 1, 0.01, 10)
-S = structure(cgmrf)
-# S[1:5, 1:5]
-# structure_base(tgrid, δ = 0.01)
-# plot(diag(inv(Matrix(S)))) # vairance 5
-gmrf = GMRF(zeros(5000), S, 10)
-# X = Matrix{float(eltype(gmrf))}(undef, length(gmrf), 3)
-# rand!(gmrf, X)
-x = rand(gmrf, (3, 2))
-
-# @time blas = structure(tgrid) + 0.01I
-structure_base(tgrid; order = 1)
-structure(tgrid)[1:10, 1:10]
-structure(tgrid; order = 1)[1:10, 1:10]
-
-sparse(vcat(1:9, 10), vcat(2:10, 1), true, 10, 10)
-# mod(1:11, 10)
-# (1:10, 1)
-
-
-
-# bb = MvNormalCanon(Matrix(gmrf.κ * S))
-bb = MvNormalCanon(Matrix(gmrf.κ * S))
-
-sparse(rand(3, 3)) + 1000I
-adjacency(tgrid)[1:10, 1:10] + 10I
-
-@time logpdf(gmrf, x)
-@time logpdf(bb, x)
-
-bla = cholesky(S)
-@time x' * sparse(bla.L);
-@time sparse(bla.L)' * x;
-@time x' * S * x
-
-@time sum(log.(diag(bla)))
-@time logdet(bla) / 2
-
-
-out = sparse(bla.L) * randn(100)
-plot(out[bla.p])
-
-
-sparse(bla.L)
-bla.p
-
-
-
-P
-= sparse(1:900, bla.p, ones(900))
-P{
-
-
-bla.UP
-sparse(bla.PtL)
-[1:10, 1:10]
-
-diag(bla)
-
-dense(bla.UP)
-
-@time r = rand(cgmrf, (3, 2));
-@time r2 = rand(gmrf, (3, 2));
-plot(r)
-plot!(r2)
-var(r)
-var(r2)
-
-# # randn() + randn(rng, reverse(dims)...) * im
-a1 = randn(1000) + randn(1000) * im
-a2 = randn(ComplexF64, 1000) * sqrt(2)
-scatter(a2)
-# var(real(a1))
-# var(real(a2))
-
-
-var(r3)
-length(gmrf)
-
-rand(gmrf)
-# igmrf = IGMRF(tgrid, 1)
-
-x = rand(gmrf)
-Distributions._logpdf(gmrf, x)
-
+tgrid = CartesianGrid((-10.0,), (10.0,), dims = (500,))
+S = structure(tgrid, δ = 0.01, order = 1)
+gmrf = GMRF(S, 3)
+x = rand(gmrf, 3)
 logpdf(gmrf, x)
+plot(x)
 
-typeof(gmrf)
-typeof(x)
+#' ### Two-dimensional GMRF
 
-reshape()
-length(grmf)
+sgrid = CartesianGrid((-10.0,-10.0), (10.0,10.0), dims = (100,120))
+S = structure(sgrid, δ = 0.01, order = 2)
+gmrf = GMRF(S, 3)
+x = rand(gmrf, 3);
+@time logpdf(gmrf, x)
+plot(sgrid, x[:, 1])
 
-# Matrix{Vector} <: AbstractMatrix
-# size(x, 2)
-# structure_base(tgrid)
-#
-# length(gmrf)
-#
-# structure_base(sgrid)
-# structure(gmrf)
+reshape(x[:,1], 100, 120) |>
+    transpose |>
+    x -> heatmap(range(-10, 10, 100), range(-10, 10, 120), x, aspect_ratio = :equal)
 
-# X = reshape(1:100, 10, 10)
-# y = zeros(100)
-# copyto!(y, X)
+#' ## RGMRF
 
-@time bla = structure_base(gmrf.grid; δ = gmrf.δ, order = gmrf.order)
-@time bla = structure_base(gmrf.grid)
-# @time sparse(bla)
+#' ### One-dimensional
 
-x = zeros(100, 10, 2)
-Distributions.rand!(Normal(), x)
+rgmrf = RGMRF(tgrid, 2, 0.01, 1)
+x = rand(rgmrf, 2)
+logpdf(rgmrf, x)
+plot(x)
 
+#' ### Two-dimensional
 
-plot(fft(bla))
-
-@time x = rand(gmrf, (2, 3))
-Matrix{Vector{Float64}}(undef, 2, 3)
-[zeros(10) for i in 1:2 for j in 1:3]
-
-@profile x = rand(gmrf, (2, 3))
-
-X = MvNormal(1:3)
-x = rand(X, (2, 3))
-@eval logpdf(X, x)
-
-size(X) == size(x)
-typeof(X)
-typeof(x)
-Matrix{Vector} <: Matrix
+rgmrf = RGMRF(sgrid, 2, 0.005, 1)
+x = rand(rgmrf, 2)
+logpdf(rgmrf, x)
+plot(sgrid, x[:, 2])
 
 
-typeof(x)
+#' ## CGMRF
 
-function plop()
-    .x1 = rand(10)
-    x1
-end
+#' ### One-dimensional
 
-function myfunc()
-    A = rand(200, 200, 400)
-    maximum(A)
-end
-
-@profile myfunc()
-Profile.print()
-
-@profile fds = plop()
-Profile.print()
-
-plot(x1)
-eltype(gmrf)
-# x2 = myrand(gmrf)
-# plot(x1[:, 2])
-# plot!(x2)
-
-bla = randn((2, 3))
-[bla...]
-vec(bla)
-
-real(3 + 2im) / 3
-real((3 + 2im) / 3)
-(3 + 2im) / 3
+cgmrf = CGMRF(tgrid, 2, 0.01, 1)
+x = rand(cgmrf, 3)
+logpdf(cgmrf, x)
+plot(x)
 
 
-6 / 3 / 2
+#' ### Two-dimensional
 
-
-plot(diag(inv(Matrix(structure(gmrf)))))
-# rgmrf = RGMRF(tgrid, 1, 0.00001, 1)
-(2 + 0.01) / 10
-diag(structure(gmrf))
-
-x = rand(gmrf)
-# plot(x)
-var(x)
-# 1 / (1 + 0.01)
-
-#' Simulate.
-x = simulate(igmrf; δ = 0.01, border = 0)
-
-plot(centroids(tgrid)[1], x, lw = 1, title = "IGMRF - N1")
-
-#' Defining an IGMRF with two neighbours per side.
-igmrf = IGMRF(tgrid, 2)
-
-#' Simulate.
-x = simulate(igmrf; δ = 0.01, border = 0)
-
-plot(centroids(tgrid)[1], x, lw = 1, title = "IGMRF - N2")
-
-#' ## Two-dimensional IGMRF
-
-#' Defining a grid.
-sgrid = CartesianGrid((-10.0, -10.0), (10.0, 10.0), dims = (200, 100))
-
-#' Defining an IGMRF with one neighbour per side.
-cgmrf = CGMRF(sgrid, 1, 0.01, 1)
-x = rand(cgmrf)
-x = reshape(x, (100, 200))
-heatmap(x)
-
-#' Simulate
-x = simulate(igmrf; δ = 0.01, border = 0)
-
-# heatmap(reverse(x, dims = 1), title = "IGMRF - N1")
-plot(sgrid, vcat(transpose(reverse(x, dims = 1))...), title = "IGMRF - N1", grid = false,
-     size = (500, 518))
-
-#' Defining an IGMRF with 2 neighbours per side.
-igmrf = IGMRF(sgrid, 2)
-
-#' Simulate
-x = simulate(igmrf; δ = 0.01, border = 0)
-
-plot(sgrid, vcat(transpose(reverse(x, dims = 1))...), title = "IGMRF - N2", grid = false,
-     size = (500, 518))
+sgrid = CartesianGrid((-10.0,-10.0), (10.0,10.0), dims = (100,120))
+cgmrf = CGMRF(sgrid, 2, 0.01, 1)
+x = rand(cgmrf, 3)
+logpdf(cgmrf, x)
+plot(sgrid, x[:, 1])
 

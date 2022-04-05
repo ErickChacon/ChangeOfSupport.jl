@@ -3,25 +3,61 @@
 
 Circulant Gaussian Markov random fields with n-th order, δ as and κ as precision.
 """
-# Sampleable{Multivariate, Continuous}
-struct CGMRF{N,T} <: ContinuousMultivariateDistribution
-    grid::CartesianGrid{N,T}
+struct CGMRF <: AbstractGMRF
+    grid::CartesianGrid
     order::Integer
     δ::Number
     κ::Number
 end
 
+Base.length(d::CGMRF) = nelements(d.grid)
+structure(d::CGMRF) = structure(d.grid; δ = d.δ, order = d.order, cyclic = true)
+scale(d::CGMRF) = d.κ
+structure_base(d::CGMRF) = structure_base(d.grid; δ = d.δ, order = d.order)
 
-function structure(X::CGMRF{1,T}) where {T}
-    A = adjacency(X.grid)
-    if X.order == 1
-        (2 + X.δ)I - A
+
+## Random generator
+
+function Distributions._rand!(rng::AbstractRNG, d::CGMRF, x::AbstractVector{T}) where T<:Real
+    # get dimensions
+    dims = size(d.grid)
+    n = prod(dims)
+
+    # compute eigenvalues
+    base = structure_base(d)
+    λ = FFTW.fft(base)
+
+    # simulate using fft
+    z = randn(rng, reverse(dims)) + randn(rng, reverse(dims)) * im
+    xaux = real(FFTW.fft(λ .^ (-1/2) .* z))
+    if length(dims) == 2
+        xaux = transpose(reverse(xaux, dims = 1))
     end
+    copyto!(x, xaux)
+    ldiv!(sqrt(n * scale(d)), x)
+
+    return x
 end
 
-Base.length(X::CGMRF) = nelements(X.grid)
+function Distributions._rand!(rng::AbstractRNG, d::CGMRF, x::AbstractArray{<:Real})
+    dims = size(d.grid)
+    n = prod(dims)
+    λ = FFTW.fft(structure_base(d))
+    @inbounds for xi in Distributions.eachvariate(x, Distributions.variate_form(typeof(d)))
+        z = randn(rng, reverse(dims)) + randn(rng, reverse(dims)) * im
+        xaux = real(FFTW.fft(λ .^ (-1/2) .* z))
+        if length(dims) == 2
+            xaux = transpose(reverse(xaux, dims = 1))
+        end
+        copyto!(xi, xaux)
+        ldiv!(sqrt(n * scale(d)), xi)
+    end
+    return x
+end
 
-# function Distributions._rand!(rng::AbstractRNG, X::CGMRF, x::AbstractVector{T}) where T<:Real
+# Logpdf
+
+# function Distributions._logpdf(X::CGMRF, x::AbstractVector{T}) where T<:Real
 #     # get dimensions
 #     dims = size(X.grid)
 #     n = prod(dims)
@@ -30,62 +66,6 @@ Base.length(X::CGMRF) = nelements(X.grid)
 #     base = structure_base(X.grid; δ = X.δ, order = X.order)
 #     λ = fft(base)
 #
-#     # simulate using fft
-#     z = randn(rng, reverse(dims)) + randn(rng, reverse(dims)) * im
-#     copyto!(x, real(fft(λ .^ (-1/2) .* z)))
-#     ldiv!(sqrt(n * X.κ), x)
-#
-#     return x
-# end
-
-function Base.rand(X::CGMRF{N,T}; border = 0) where {N,T}
-    dims = X.grid.dims
-    n = prod(dims)
-
-    # define base
-    base = structure_base(X.grid; δ = X.δ, order = X.order)
-
-    # compute eigenvalues
-    λ = fft(base)
-
-    # simulate
-    z = randn(reverse(dims)...) + randn(reverse(dims)...) * im
-    x = real(fft(λ .^ (-1/2) .* z) / sqrt(n))
-    x = x / sqrt(X.κ)
-
-    # edge effects
-    if length(dims) == 1
-        x[border + 1:n - border]
-    elseif length(dims) == 2
-        x[border + 1:dims[2] - border, border + 1:dims[1] - border]
-    end
-end
-
-# function Distributions._logpdf(X::CGMRF, x::AbstractVector{T}) where T<:Real
-#
-# end
-
-# function Distributions._logpdf(X::CGMRF, x::AbstractVector{T}) where T<:Real
-#     # # get dimensions
-#     # dims = size(X.grid)
-#     # n = prod(dims)
-#     #
-#     # # compute eigenvalues
-#     # base = structure_base(X.grid; δ = X.δ, order = X.order)
-#     # λ = fft(base)
-#     #
-#     # # output = (- n * log(2π) + sum(log.(real(λ)))) / 2
-#     # output = λ .* ifft()
-#     #
-#     # # shdfhdim, v = mvtdist_consts(d)
-#     # # v - shdfhdim * log1p(sqmahal(d, x) / d.df)
-# end
-
-# function _logpdf!(r::AbstractArray{<:Real}, d::AbstractMvNormal, x::AbstractMatrix{<:Real})
-#     sqmahal!(r, d, x)
-#     c0 = mvnormal_c0(d)
-#     for i = 1:size(x, 2)
-#         @inbounds r[i] = c0 - r[i]/2
-#     end
-#     r
+#     # output = (- n * log(2π) + sum(log.(real(λ)))) / 2
+#     output = λ .* ifft()
 # end

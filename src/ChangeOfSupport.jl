@@ -5,13 +5,21 @@ using Meshes
 import SparseArrays: sparse, spdiagm, I
 include("meshes.jl")
 
+export GMRF, RGMRF, CGMRF
+import SuiteSparse # this is only for fixes
+import FFTW
+import Distributions: ContinuousMultivariateDistribution, Distributions
+import Random: AbstractRNG, randn!
+import LinearAlgebra: cholesky, ldiv!, LinearAlgebra
+include("gmrf.jl")
+
+
 # using Random
 # using SparseArrays
 # using FFTW
 # using LinearAlgebra # cholesky
 # import LinearAlgebra: (\)
 # using Distributions # Gamma
-# import SuiteSparse.CHOLMOD: FactorComponent, Dense
 
 
 # include("knots.jl")

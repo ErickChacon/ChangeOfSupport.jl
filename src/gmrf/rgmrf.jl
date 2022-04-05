@@ -3,27 +3,13 @@
 
 Regular Gaussian Markov random field with n-th order, δ as and κ as precision.
 """
-struct RGMRF{N,T}
-    grid::CartesianGrid{N,T}
+struct RGMRF <: AbstractGMRF
+    grid::CartesianGrid
     order::Integer
     δ::Number
-    κ::Number
+    κ::Real
 end
 
-function structure(X::RGMRF{N,T}) where {N,T}
-    A = adjacency(X.grid)
-    if X.order == 1
-        neighs = vec(sum(A, dims = 2))
-        Diagonal(neighs .+ X.δ) - A
-    else
-        throw(ErrorException("not implemented"))
-    end
-end
-
-function Base.rand(X::RGMRF{N,T}) where {N,T}
-    n = nelements(X.grid)
-    R = structure(X)
-    x = cholesky(R).UP \ randn(n)
-    x / sqrt(X.κ)
-end
-
+Base.length(d::RGMRF) = nelements(d.grid)
+structure(d::RGMRF) = structure(d.grid; δ = d.δ, order = d.order, cyclic = false)
+scale(d::RGMRF) = d.κ
