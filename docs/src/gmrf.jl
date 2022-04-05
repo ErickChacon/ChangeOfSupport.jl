@@ -1,5 +1,5 @@
 #' ---
-#' title: Intrinsic Gaussian Markov Random Fields (IGMRF)
+#' title: Gaussian Markov Random Fields (IGMRF)
 #' author: Erick A. Chacón-Montalván
 #' weave_options:
 #'   term: true
@@ -10,11 +10,7 @@ using Meshes
 using Plots
 using ChangeOfSupport
 using Distributions
-# using StatsBase
-# using LinearAlgebra
-# using Distributions
-# using SparseArrays
-# using PDMats
+using Statistics
 const CS = ChangeOfSupport
 
 gr(dpi = 250)
@@ -29,6 +25,13 @@ gmrf = GMRF(S, 3)
 x = rand(gmrf, 3)
 logpdf(gmrf, x)
 plot(x)
+
+# Q = 3S
+# Σ = inv(Matrix(Q))
+# min(diag(Σ)...)
+# var(x, dims = 1)
+# aux = MvNormalCanon(Matrix(3S))
+# logpdf(aux, x)
 
 #' ### Two-dimensional GMRF
 
