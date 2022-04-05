@@ -11,7 +11,7 @@ import SuiteSparse # this is only for fixes
 import FFTW
 import Distributions
 import Random: AbstractRNG, randn!
-import LinearAlgebra: cholesky, ldiv!, LinearAlgebra
+import LinearAlgebra: cholesky, ldiv!, I, LinearAlgebra
 include("gmrf.jl")
 export GMRF, RGMRF, CGMRF
 
