@@ -5,6 +5,14 @@ struct NRegularBsplines{N,T}
     order::Int
 end
 
+function NRegularBsplines(grid::CartesianGrid{N, T}, order::Int) where {N, T}
+    lower = Tuple(x for x in coordinates(minimum(grid)))
+    upper = Tuple(x for x in coordinates(maximum(grid)))
+
+    NRegularBsplines(lower, upper, size(grid), order)
+end
+
+
 function basis(x::NTuple{N, T}, b::NRegularBsplines{N, T}) where {N, T}
     b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
     bb = [basis(x[i], b[i]) for i in 1:N]
