@@ -21,3 +21,5 @@ export startingknots, centroidknots
 
 include("mcmc.jl")
 export sample_gam, sample_gam_sparse
+
+end
