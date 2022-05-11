@@ -1,10 +1,13 @@
 name = "ChangeOfSupport"
 uuid = "1e974ad3-88f4-4d68-b8ec-be357b917c1d"
-authors = ["Erick A. Chacón-Montalván"]
+authors = ["Erick A. Chacón-Montalván <e.chaconmontalvan@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Meshes = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SuiteSparse = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
