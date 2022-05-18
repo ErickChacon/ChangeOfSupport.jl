@@ -1,1 +1,5 @@
 # ChangeofSuppport Documentation
+
+```@docs
+RegularBsplines
+```
