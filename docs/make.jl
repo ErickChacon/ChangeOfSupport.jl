@@ -12,6 +12,6 @@ Literate.markdown.(jls, joinpath("src"), documenter = true,
     repo_root_url = "https://github.com/ErickChacon/ChangeOfSupport.jl/blob/main",
     credit = false)
 
-# makedocs(sitename = "My Documentation")
-#
+makedocs(sitename = "ChangeOfSupport Documentation")
+
 
