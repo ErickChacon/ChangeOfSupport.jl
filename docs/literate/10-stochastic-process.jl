@@ -29,6 +29,7 @@ n = 50
 bsgrid = CartesianGrid((-100.0, -100.0), (100.0, 100.0), dims = (n,n))
 bs = NRegularBsplines(bsgrid, 3)
 gmrf = RGMRF(bsgrid, 2, 0.1, 1)
+
 tgrid = CartesianGrid((-100.0, -100.0), (100.0, 100.0), dims = (300,200))
 Bs = basis(tgrid, bs)
 δ = rand(gmrf)

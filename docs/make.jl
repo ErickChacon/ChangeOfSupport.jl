@@ -14,4 +14,3 @@ Literate.markdown.(jls, joinpath("src"), documenter = true,
 
 makedocs(sitename = "ChangeOfSupport Documentation")
 
-
