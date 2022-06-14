@@ -49,3 +49,10 @@ function get_x_index(x::Number, knots::AbstractRange)
 
     return i
 end
+
+# RegularKnots are important to compute bsplines because it allows to build knots based on
+# a reference value and later extend it to obtain numerically comparable knots. In case we
+# do not use a unique reference value, the knots are not always comparable in practice due
+# to limited precision for real numbers. In case of bsplines, the recursive relationship,
+# and also the recursive integral relationship need to work with a set of knots that are
+# reduced or extended depending of the of the `order` of the bsplines.
