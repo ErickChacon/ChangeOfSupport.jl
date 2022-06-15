@@ -13,41 +13,23 @@ struct RegularKnots
     nr::Int
 end
 
-# Converts a RegularKnots object to a range using `x.lower` as reference value. It allows
-# to create ranges with comparable knots because it uses the same reference value.
+"""
+Number of knots in a `RegularKnots` object.
+"""
+Base.length(x::RegularKnots) = x.ni + x.nl + x.nr + 2
+
+"""
+Converts a `RegularKnots` object `x` to a `range` using `x.lower` as reference value. It
+allows to create ranges with comparable knots because it uses the same reference value.
+"""
 function Base.range(x::RegularKnots)
-    n_knots = x.ni + x.nl + x.nr + 2
+    n_knots = length(x)
     step = (x.upper - x.lower) / (x.ni + 1)
     knotrange = StepRangeLen(
         Base.TwicePrecision{Float64}(x.lower),
         Base.TwicePrecision{Float64}(step),
         n_knots, x.nl + 1)
     return knotrange
-end
-
-# Get index i such as knots[i] ≤ x < knots[i+1]. We use it to identify basis splines of
-# order k that are non-zero at x.
-function get_x_index(x::Number, knots::AbstractRange)
-
-    # check if x is inside the range
-    if x < knots[1]
-        return 0
-    elseif x >= knots[end]
-        return length(knots)
-    end
-
-    # compute index if x is inside the range
-    i = 1 + floor(Int, (x - knots[1]) / step(knots))
-
-    # simple fix in case condition knots[i] ≤ x < knots[i+1] is not hold
-    if x >= knots[i + 1]
-        i = i + 1
-    end
-    if x < knots[i]
-        i = i - 1
-    end
-
-    return i
 end
 
 # RegularKnots are important to compute bsplines because it allows to build knots based on
