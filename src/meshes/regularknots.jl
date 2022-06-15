@@ -14,13 +14,19 @@ struct RegularKnots
 end
 
 """
-Number of knots in a `RegularKnots` object.
+    length(x::RegularKnots)
+
+Number of knots in `x`.
 """
 Base.length(x::RegularKnots) = x.ni + x.nl + x.nr + 2
 
 """
-Converts a `RegularKnots` object `x` to a `range` using `x.lower` as reference value. It
-allows to create ranges with comparable knots because it uses the same reference value.
+    range(x::RegularKnots)
+
+Return the range associated to `x`.
+
+It creates the range using `x.lower` as reference value. It allows to create ranges with
+comparable knots when using the same reference value.
 """
 function Base.range(x::RegularKnots)
     n_knots = length(x)

@@ -1,5 +1,11 @@
 ## Basic methods for CartesianGrid
 
+"""
+    range(x::CartesianGrid)
+
+Return vector of ranges for `x`. Each element of this vector es the range associated to
+each dimension of `x`.
+"""
 function Base.range(x::CartesianGrid{Dim}) where {Dim}
     lower = coordinates(minimum(x))
     upper = coordinates(maximum(x))
@@ -7,20 +13,36 @@ function Base.range(x::CartesianGrid{Dim}) where {Dim}
     [(lower[i]):(step[i]):(upper[i]) for i in 1:Dim]
 end
 
+"""
+    centroids(x::CartesianGrid)
+
+Return vector of centroids for `x`. Each element of this vector is the centroids
+associated to each dimension of `x`.
+"""
 function centroids(x::CartesianGrid{Dim}) where {Dim}
     gridknots = range(x)
     [knots[1:end-1] .+ 0.5 * step(knots) for knots in gridknots]
 end
 
+"""
+    centroidsmat(x::CartesianGrid)
+
+Return a matrix of centroids for `x`. Each row of this matrix is the centroid associated
+to each element of `x`.
+"""
 function centroidsmat(x::CartesianGrid{Dim}) where {Dim}
     Matrix(transpose(reduce(hcat, coordinates.(centroid.(x)))))
 end
 
 """
-Return the adjacency `n×n` matrix (A) of a `CartesianGrid` where `n` is the number of
-elements of the `CartesianGrid`. The value of A[i,j] is 1 if the element `i` and `j` are
-neighbors of the specified `order`, and A[i, j] is 0 otherwise. Use the argument `cyclic =
-true` to assume neighbors defined by embedding the CartesianGrid in a torus.
+    adjacency(x::CartesianGrid; order = 1, cyclic = false)
+
+Return the adjacency `n×n` matrix (A) of `x` for a specified `order`.
+
+`n` is the number of elements of the `x`. The value of A[i,j] is `true` if the element `i`
+and `j` are neighbors of the specified `order`, and A[i, j] is `false` otherwise. Use the
+argument `cyclic = true` to assume neighbors defined by embedding the CartesianGrid in a
+torus.
 """
 function adjacency(g::CartesianGrid{1}; order = 1, cyclic = false)
     n = nelements(g)
