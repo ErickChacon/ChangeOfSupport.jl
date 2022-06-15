@@ -1,11 +1,13 @@
 """
     RegularBsplines(lower, upper, order, df)
 
-Bsplines defined over a regular grid with `lower` and `upper` bounds. In total we create
-`df` basis functions of a specific `order`. In order to evaluate the basis functions, we
-add `order - 1` knots to the left of lower such as there are `order - 1` basis starting at
-the additional left knots, 1 basis starting at `lower` and the remainin basis starts at
-the `ni` internal knots (ni = df - order).
+Bsplines of specified `order` with `df` degrees of freedom, using regular knots with
+`lower` and `upper` bounds.
+
+In order to evaluate the basis functions, we add `order - 1` knots to the left of lower
+such as there are `order - 1` basis starting at the additional left knots, 1 basis
+starting at `lower` and the remainin basis starts at the `ni` internal knots (ni = df -
+order). We return, `df` basis functions of the specified `order`.
 """
 struct RegularBsplines
     lower::Number
@@ -14,38 +16,52 @@ struct RegularBsplines
     order::Int
 end
 
-# function basis(x::RectilinearGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
+"""
+    extendedknots(b::RegularBsplines)
 
+Return an extended RegularKnots object necessary to evaluate the RegularBsplines `b`.
+"""
 function extendedknots(b::RegularBsplines)
     RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, b.order)
 end
 
-function boundaryknots(b::RegularBsplines)
-    RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+"""
+    get_x_index(x::Number, knots::AbstractRange)
+
+Get index i such as `knots[i] ≤ x < knots[i+1]`. We use it to identify basis splines of
+certain order that are non-zero at x.
+"""
+function get_x_index(x::Number, knots::AbstractRange)
+
+    # check if x is inside the range
+    if x < knots[1]
+        return 0
+    elseif x >= knots[end]
+        return length(knots)
+    end
+
+    # compute index if x is inside the range
+    i = 1 + floor(Int, (x - knots[1]) / step(knots))
+
+    # simple fix in case condition knots[i] ≤ x < knots[i+1] is not hold
+    if x >= knots[i + 1]
+        i = i + 1
+    end
+    if x < knots[i]
+        i = i - 1
+    end
+
+    return i
 end
 
-# knots where basis functions start and upper boundary
-function startingknots(b::RegularBsplines)
-    RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, -1)
-end
 
-# centroid reference for basis function
-function centroids(b::RegularBsplines)
-    h = (b.upper - b.lower) / (b.df - b.order + 1)
-    RegularKnots(b.lower + h * b.order / 2,
-                 b.upper + h * b.order / 2,
-                 b.df - b.order, b.order - 1, -1)
-end
+"""
+    basis(x::Number, b::RegularBsplines)
 
-# knots for centroid reference for basis function
-function centroidknots(b::RegularBsplines)
-    h = (b.upper - b.lower) / (b.df - b.order + 1)
-    RegularKnots(b.lower + h * (b.order - 1) / 2,
-                 b.upper + h * (b.order - 1) / 2,
-                 b.df - b.order, b.order - 1, 0)
-end
+Return an sparse vector of the evaluation of Bsplines `b` at `x`.
 
-# algorithm based on boor 2001, page 110
+The dimension of the sparse vector is `b.df`. The algorithm is based on De Boor (2001, page 110).
+"""
 function basis(x::Number, b::RegularBsplines)
     knots = extendedknots(b)
     knotrange = range(knots)
@@ -86,42 +102,14 @@ function basis(x::Number, b::RegularBsplines)
     basis[1:b.df]
 end
 
-# # algorithm based on boor 2001, page 110
-# function basis_old(x::Number, b::RegularBsplines)
-#     knots = extendedknots(b)
-#     knotrange = range(knots)
-#
-#     # initial arguments
-#     basis = zeros(length(knotrange))
-#
-#     # check x inside acceptable range
-#     if !(b.lower ≤ x ≤ b.upper)
-#         throw(DomainError(x, "The values of x should lie in the range of b."))
-#     end
-#
-#     # order = 1
-#     x_index = get_x_index(x, knotrange)
-#     basis[x_index] = 1
-#
-#     # order > 1
-#     δᵣ = zeros(b.order - 1)
-#     δₗ = zeros(b.order - 1)
-#
-#     for j = 1:(b.order - 1) # basis order
-#         δᵣ[j] = knotrange[x_index + j] - x
-#         δₗ[j] = x - knotrange[x_index + 1 - j]
-#         saved = 0
-#         for r = 1:j # non-zero knots
-#             term = basis[x_index-j+r] / (δᵣ[r] + δₗ[j+1-r])
-#             basis[x_index-j-1+r] = saved + δᵣ[r] * term
-#             saved = δₗ[j+1-r] * term
-#         end
-#         basis[x_index] = saved
-#     end
-#
-#     basis[1:b.df]
-# end
+"""
+    basis(x::AbstractVector, b::RegularBsplines)
 
+Return an sparse matrix of the evaluation of Bsplines `b` at `x`.
+
+The sparse matrix has `length(x)` rows and `b.df` columns. The algorithm is based on De
+Boor (2001, page 110).
+"""
 function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     knots = extendedknots(b)
     knotrange = range(knots)
@@ -170,6 +158,71 @@ function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     # return only the first df basis functions
     sparse(I, J, basis)[:, 1:b.df]
 end
+
+
+
+function boundaryknots(b::RegularBsplines)
+    RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+end
+
+# knots where basis functions start and upper boundary
+function startingknots(b::RegularBsplines)
+    RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, -1)
+end
+
+# centroid reference for basis function
+function centroids(b::RegularBsplines)
+    h = (b.upper - b.lower) / (b.df - b.order + 1)
+    RegularKnots(b.lower + h * b.order / 2,
+                 b.upper + h * b.order / 2,
+                 b.df - b.order, b.order - 1, -1)
+end
+
+# knots for centroid reference for basis function
+function centroidknots(b::RegularBsplines)
+    h = (b.upper - b.lower) / (b.df - b.order + 1)
+    RegularKnots(b.lower + h * (b.order - 1) / 2,
+                 b.upper + h * (b.order - 1) / 2,
+                 b.df - b.order, b.order - 1, 0)
+end
+
+
+# # algorithm based on boor 2001, page 110
+# function basis_old(x::Number, b::RegularBsplines)
+#     knots = extendedknots(b)
+#     knotrange = range(knots)
+#
+#     # initial arguments
+#     basis = zeros(length(knotrange))
+#
+#     # check x inside acceptable range
+#     if !(b.lower ≤ x ≤ b.upper)
+#         throw(DomainError(x, "The values of x should lie in the range of b."))
+#     end
+#
+#     # order = 1
+#     x_index = get_x_index(x, knotrange)
+#     basis[x_index] = 1
+#
+#     # order > 1
+#     δᵣ = zeros(b.order - 1)
+#     δₗ = zeros(b.order - 1)
+#
+#     for j = 1:(b.order - 1) # basis order
+#         δᵣ[j] = knotrange[x_index + j] - x
+#         δₗ[j] = x - knotrange[x_index + 1 - j]
+#         saved = 0
+#         for r = 1:j # non-zero knots
+#             term = basis[x_index-j+r] / (δᵣ[r] + δₗ[j+1-r])
+#             basis[x_index-j-1+r] = saved + δᵣ[r] * term
+#             saved = δₗ[j+1-r] * term
+#         end
+#         basis[x_index] = saved
+#     end
+#
+#     basis[1:b.df]
+# end
+
 
 function basis_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     knots = extendedknots(b)
@@ -280,3 +333,11 @@ end
 #     # ibasis = integral(gridknots, b)
 #     # diff(ibasis, dims = 1) ./ diff(gridknots)
 # end
+
+# function cartesiangrid(b::RegularBsplines)
+#     n_knots = b.df + b.order + 1
+#     step = (b.upper - b.lower) / (b.df - b.order + 1)
+#     CartesianGrid((n_knots - 1,), (b.lower,), (step,), (b.order,))
+#     # RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, b.order)
+# end
+
