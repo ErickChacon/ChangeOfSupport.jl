@@ -37,14 +37,24 @@ end
 """
     adjacency(x::CartesianGrid; order = 1, cyclic = false)
 
-Return the adjacency `n×n` matrix (A) of `x` for a specified `order`.
+Return the adjacency `n×n` matrix (A) of the CartesianGrid `x` for a specified `order`.
 
 `n` is the number of elements of the `x`. The value of A[i,j] is `true` if the element `i`
 and `j` are neighbors of the specified `order`, and A[i, j] is `false` otherwise. Use the
 argument `cyclic = true` to assume neighbors defined by embedding the CartesianGrid in a
 torus.
 """
-function adjacency(g::CartesianGrid{1}; order = 1, cyclic = false)
+function adjacency(g::CartesianGrid{Dim}; order::Int = 1, cyclic::Bool = false) where {Dim}
+    if Dim == 1
+        adjacency1(g; order = order, cyclic = cyclic)
+    elseif Dim == 2
+        adjacency2(g; order = order, cyclic = cyclic)
+    else
+        throw(ErrorException("adjacency is not implemented for Dim > 2"))
+    end
+end
+
+function adjacency1(g::CartesianGrid{1}; order::Int = 1, cyclic::Bool = false)
     n = nelements(g)
 
     # neighbors to the right (→)
@@ -61,7 +71,7 @@ function adjacency(g::CartesianGrid{1}; order = 1, cyclic = false)
     A .| A'
 end
 
-function adjacency(g::CartesianGrid{2}; order = 1, cyclic = false)
+function adjacency2(g::CartesianGrid{2}; order::Int = 1, cyclic::Bool = false)
     n1, n2 = size(g)
     n = nelements(g)
 
