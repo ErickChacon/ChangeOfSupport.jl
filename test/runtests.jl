@@ -9,16 +9,11 @@ const cs = ChangeOfSupport
 xxt(x::SparseMatrixCSC) = x .| x'
 
 @testset "RegularKnots" begin
-    # regular knots
     knots = RegularKnots(-10, 10, 3, 3, 3)
     @test length(knots) == 11
     @test range(knots) == -25:5:25
     knots = RegularKnots(-10, 10, 3, 0, 0)
     @test range(knots) == -10.0:5.0:10.0
-
-    # get x index
-    @test map(x -> cs.get_x_index(x, 1:10), [-1, 1, 9, 11]) == [0, 1, 9, 10]
-    @test map(x -> cs.get_x_index(x, 1:10), [2.1, 5.1, 7.9]) == [2, 5, 7]
 end
 
 @testset "CartesianGrid" begin
@@ -86,6 +81,84 @@ end
     @test centroids(rgrid)[2] == [-8.5, -4.5, 0.0, 4.0, 8.0]
 end
 
+@testset "Auxiliary variables for RegularBsplines" begin
+    # get x index
+    @test map(x -> cs.get_x_index(x, 1:10), [-1, 1, 9, 11]) == [0, 1, 9, 10]
+    @test map(x -> cs.get_x_index(x, 1:10), [2.1, 5.1, 7.9]) == [2, 5, 7]
+
+    # extendedknots
+    knots = extendedknots(RegularBsplines(-10.0, 8.0, 10, 2))
+    @test range(knots) == -12.0:2.0:12.0
+    knots = extendedknots(RegularBsplines(-10.0, 10.0, 10, 3))
+    @test range(knots) == -15.0:2.5:17.5
+    knots = extendedknots(RegularBsplines(0.0, 14.0, 10, 4))
+    @test range(knots) == -6.0:2.0:22.0
+end
+
+@testset "RegularBsplines evaluated at scalars" begin
+    # ORDER 1
+    bs = RegularBsplines(-10.0, 10.0, 10, 1)
+    # adequate domain
+    errormessage =  "The values of x should lie in the range of b."
+    @test_throws DomainError(-10.1, errormessage) basis(-10.1, bs)
+    @test_throws DomainError(10.1, errormessage) basis(10.1, bs)
+    # basis at knots
+    @test map(x -> basis(x, bs), -10.0:2.0:8.0) ==
+        map(x -> SparseVector(10, [x], [1.0]), 1:10)
+    @test basis(10.0, bs) == spzeros(10)
+    # basis at non-knots
+    @test map(x -> basis(x, bs), -9.0:2.0:9.0) ==
+        map(x -> SparseVector(10, [x], [1.0]), 1:10)
+
+    # ORDER 2
+    bs = RegularBsplines(-10.0, 10.0, 10, 2)
+    @test isapprox(basis(-9.0, bs), SparseVector(10, [1, 2], [0.55, 0.45]))
+    @test isapprox(basis(-7.0, bs), SparseVector(10, [2, 3], [0.65, 0.35]))
+    @test isapprox(basis(-5.0, bs), SparseVector(10, [3, 4], [0.75, 0.25]))
+    @test isapprox(basis(5.0, bs), SparseVector(10, [7, 8], [0.25, 0.75]))
+    @test isapprox(basis(7.0, bs), SparseVector(10, [8, 9], [0.35, 0.65]))
+    @test isapprox(basis(9.0, bs), SparseVector(10, [9, 10], [0.45, 0.55]))
+
+    # ODER 3
+    bs = RegularBsplines(-10.0, 10.0, 10, 3)
+    @test isapprox(basis(-4.0, bs), SparseVector(10, [3, 4, 5], [0.18, 0.74, 0.08]))
+    @test isapprox(basis(-2.0, bs), SparseVector(10, [4, 5, 6], [0.32, 0.66, 0.02]))
+    @test isapprox(basis(2.0, bs), SparseVector(10, [5, 6, 7], [0.02, 0.66, 0.32]))
+    @test isapprox(basis(4.0, bs), SparseVector(10, [6, 7, 8], [0.08, 0.74, 0.18]))
+end
+
+@testset "RegularBsplines evaluated at vectors" begin
+    # ORDER 1
+    bs = RegularBsplines(-10.0, 10.0, 10, 1)
+    # adequate domain
+    errormessage =  "The values of x should lie in the range of b."
+    @test_throws DomainError([-10.1, 0.0], errormessage) basis([-10.1, 0.0], bs)
+    @test_throws DomainError([10.1, 0.0], errormessage) basis([10.1, 0.0], bs)
+    @test_throws DomainError([-10.1, 10.1], errormessage) basis([-10.1, 10.1], bs)
+    # basis at knots
+    @test basis(-10.0:10.0, bs) ==
+        sparse(1:20, repeat(1:10, inner = 2), repeat([1.0], 20), 21, 10)
+
+    # ORDER 2
+    bs = RegularBsplines(-10.0, 10.0, 10, 2)
+    B = basis(-10.0:2.0:10.0, bs)
+    @test isapprox(B, spdiagm(11, 10, 0 => 1.0:-0.1:0.1, -1 => 0.1:0.1:1.0, 1 => [0.0]))
+
+    # ORDER 3
+    bs = RegularBsplines(-10.0, 10.0, 10, 3)
+    knotstep = step(range(extendedknots(bs)))
+    @test basis(-10.0:knotstep:10.0, bs) ≈
+        spdiagm(9, 10, 0 => fill(0.5, 9), 1 => fill(0.5, 9), 2 => fill(0.0, 8))
+end
+
+
+
+
+
+# bla = basis(1.0, bs)
+# Matrix(bla)
+
+
 # @testset "Difference and structure matrices" begin
 #     # 1d
 #     grid = CartesianGrid(Point(-10.0), Point(10.0), dims = (5,))
@@ -106,6 +179,4 @@ end
 #     # non cyclic difference
 #     # cyclic difference
 # end
-
-
 

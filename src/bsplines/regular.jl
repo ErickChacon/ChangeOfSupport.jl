@@ -4,7 +4,7 @@
 Bsplines of specified `order` with `df` degrees of freedom, using regular knots with
 `lower` and `upper` bounds.
 
-In order to evaluate the basis functions, we add `order - 1` knots to the left of lower
+In order to evaluate the basis functions, we add `order - 1` knots to the left of `lower`
 such as there are `order - 1` basis starting at the additional left knots, 1 basis
 starting at `lower` and the remainin basis starts at the `ni` internal knots (ni = df -
 order). We return, `df` basis functions of the specified `order`.
@@ -23,6 +23,23 @@ Return an extended RegularKnots object necessary to evaluate the RegularBsplines
 """
 function extendedknots(b::RegularBsplines)
     RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, b.order)
+end
+
+"""
+    CartesianGrid(b::RegularBsplines)
+
+Return a `CartesianGrid` associated with the basis splines of `b`.
+
+The length of `b` is equals to the degrees of freedom of `b`. The returning
+`CartesianGrid` is built such as its centroids are the same as the the centroids of the
+basis functions of `b`.
+"""
+function CartesianGrid(b::RegularBsplines)
+    spacing = (b.upper - b.lower) /  (b.df - b.order + 1)
+    shift = spacing * (b.order - 1) / 2
+    CartesianGrid((b.df,), (b.lower + shift,), (spacing,), (b.order,))
+    # nknots = b.df + b.order + 1
+    # CartesianGrid((nknots-1,), (b.lower,), (spacing,), (b.order,))
 end
 
 """
@@ -58,9 +75,10 @@ end
 """
     basis(x::Number, b::RegularBsplines)
 
-Return an sparse vector of the evaluation of Bsplines `b` at `x`.
+Return an sparse vector of the evaluation of the basis functions of `b` at `x`.
 
-The dimension of the sparse vector is `b.df`. The algorithm is based on De Boor (2001, page 110).
+The dimension of the returning sparse vector is `b.df`. The algorithm is based on De Boor
+(2001, page 110).
 """
 function basis(x::Number, b::RegularBsplines)
     knots = extendedknots(b)
@@ -159,32 +177,61 @@ function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     sparse(I, J, basis)[:, 1:b.df]
 end
 
+"""
+    integral(x::Number, b::RegularBsplines)
 
-
-function boundaryknots(b::RegularBsplines)
-    RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+Return an sparse vector of the integral of the basis functions of `b` up to `x`.
+"""
+function integral(x::Number, b::RegularBsplines)
+    # define new knots and step
+    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
+    knotstep = step(range(extendedknots(b)))
+    # compute integral
+    ibasis = basis(x, b)[2:b.df]
+    knotstep * reverse(cumsum(reverse(ibasis)))
 end
+
+"""
+    integral(x::Vector, b::RegularBsplines)
+
+Return an sparse matrix of the integral of the basis functions of `b` up to `x`.
+"""
+function integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
+    # define new knots and step
+    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
+    knotstep = step(range(extendedknots(b)))
+    # compute integral
+    ibasis = basis(x, b)[:, 2:b.df]
+    knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
+end
+
+
+
+
+# function boundaryknots(b::RegularBsplines)
+#     RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+# end
 
 # knots where basis functions start and upper boundary
 function startingknots(b::RegularBsplines)
     RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, -1)
 end
 
-# centroid reference for basis function
-function centroids(b::RegularBsplines)
-    h = (b.upper - b.lower) / (b.df - b.order + 1)
-    RegularKnots(b.lower + h * b.order / 2,
-                 b.upper + h * b.order / 2,
-                 b.df - b.order, b.order - 1, -1)
-end
-
-# knots for centroid reference for basis function
-function centroidknots(b::RegularBsplines)
-    h = (b.upper - b.lower) / (b.df - b.order + 1)
-    RegularKnots(b.lower + h * (b.order - 1) / 2,
-                 b.upper + h * (b.order - 1) / 2,
-                 b.df - b.order, b.order - 1, 0)
-end
+# # centroid reference for basis function
+# function centroids(b::RegularBsplines)
+#     h = (b.upper - b.lower) / (b.df - b.order + 1)
+#     RegularKnots(b.lower + h * b.order / 2,
+#                  b.upper + h * b.order / 2,
+#                  b.df - b.order, b.order - 1, -1)
+# end
+#
+# # knots for centroid reference for basis function
+# function centroidknots(b::RegularBsplines)
+#     h = (b.upper - b.lower) / (b.df - b.order + 1)
+#     RegularKnots(b.lower + h * (b.order - 1) / 2,
+#                  b.upper + h * (b.order - 1) / 2,
+#                  b.df - b.order, b.order - 1, 0)
+# end
 
 
 # # algorithm based on boor 2001, page 110
@@ -298,23 +345,6 @@ end
 #     return basis[:, 1:b.df]
 # end
 
-function integral(x::Number, b::RegularBsplines)
-    # define new knots and step
-    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
-    knotstep = step(range(extendedknots(b)))
-    # compute integral
-    ibasis = basis(x, b)[2:b.df]
-    knotstep * reverse(cumsum(reverse(ibasis)))
-end
-
-function integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
-    # define new knots and step
-    b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
-    knotstep = step(range(extendedknots(b)))
-    # compute integral
-    ibasis = basis(x, b)[:, 2:b.df]
-    knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
-end
 
 function basis(x::CartesianGrid{1}, b::RegularBsplines)
     gridknots = range(x)[1]

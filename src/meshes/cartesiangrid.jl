@@ -1,4 +1,4 @@
-## Basic methods for CartesianGrid
+# Basic methods for CartesianGrid
 
 """
     range(x::CartesianGrid)
