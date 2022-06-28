@@ -174,7 +174,7 @@ function basis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     end
 
     # return only the first df basis functions
-    sparse(I, J, basis)[:, 1:b.df]
+    sparse(I, J, basis, length(x), length(knotrange))[:, 1:b.df]
 end
 
 """
