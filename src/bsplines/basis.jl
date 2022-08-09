@@ -150,7 +150,7 @@ end
 Converts the non-zero basis splines to an sparse matrix of dimension `n×df`.
 """
 function sparsebasis(basis::Vector, lastindex::Int, df::Int)
-    order = length(basis)
+    order = length(basis) # number of non-zero basis splines
     J = [(lastindex-order+k) for k in 1:order] # indices of basis splines
     sparsevec(J, basis, df + 1)[1:df]
 end
@@ -165,7 +165,8 @@ end
 # we can improve sparsebasis considering the restriction (lower ≤ x < upper) instead of
 # (lower ≤ x ≤ upper).
 
-# from here, these are old functions
+# The following functions are just old functions used to be compared with current
+# versions.
 
 function basis_sparse(x::Number, b::RegularBsplines)
     knots = extendedknots(b)

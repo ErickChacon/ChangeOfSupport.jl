@@ -26,6 +26,9 @@ basis(10.0, bs)
 t = range(-10, 10, length = 500)
 Bs = basis(t, bs)
 
+# Bss = sparse(Bs)
+# length(findall(!iszero, Bss)) / prod(size(Bss))
+
 p1 = plot(t, Bs, lw = 1, legend = false, title = "(a) B-splines");
 plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5)
 

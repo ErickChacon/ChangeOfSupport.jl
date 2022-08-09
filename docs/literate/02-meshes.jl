@@ -59,3 +59,10 @@ adjacency(sgrid, order = 1)
 difference(sgrid, order = 2, cyclic = false)
 structure(sgrid, order = 2, cyclic = false)
 
+# # Meshviz
+# using MeshViz
+# import CairoMakie as Mke
+# sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (20,20))
+# viz(sgrid, color = randn(nelements(sgrid)), showfacets = true) |>
+#     x -> Mke.save("plop.pdf", x)
+

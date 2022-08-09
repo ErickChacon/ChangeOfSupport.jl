@@ -3,7 +3,7 @@
 
 Return an sparse vector of the integral of the basis functions of `b` up to `x`.
 """
-function integral(x::Number, b::RegularBsplines)
+function integral_old(x::Number, b::RegularBsplines)
     # define new knots and step
     b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
     knotstep = step(range(extendedknots(b)))
@@ -17,7 +17,7 @@ end
 
 Return an sparse matrix of the integral of the basis functions of `b` up to `x`.
 """
-function integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
+function integral_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     # TODO: this implimentation is slow for large vectors
     # define new knots and step
     b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
@@ -33,8 +33,21 @@ function _integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     knotstep = step(range(extendedknots(bi)))
     # compute integral
     ibasis, indices = nonzerobasis(x, bi)
-    ibasis = knotstep * reverse(cumsum(reverse(ibasis[:, 2:(bi.order)], dims = 2), dims = 2), dims = 2)
-    ibasis, indices
+    # remove first column
+    ibasis = ibasis[:, 2:(bi.order)]
+    indices = indices .-1
+    # compute integral
+    ibasis = knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
+    return ibasis, indices
+end
+
+function integral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
+    # 1) we compute only the `bs.order` non-zero basis splines and the indices for the
+    # last nons-zero basis spline of each element in `x`.
+    ibasis, lastindices = _integral(x, bs)
+    # 2) we convert the basis to a sparse design matrix associated to the `bs.df` basis
+    # splines.
+    sparsebasis(ibasis, lastindices, bs.df)
 end
 
 # function basis(x::CartesianGrid{1}, b::RegularBsplines)

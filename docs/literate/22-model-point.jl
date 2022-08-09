@@ -71,6 +71,7 @@ plot!(p2, transpose(κ2), lw = 0.000001, legend = true, label = "sparse")
 p3 = plot(transpose(β), lw = 0.000001, legend = false)
 hline!(p3, δ, linestyle = :dash, color = :gray, lw = 0.1)
 plot!(p3, transpose(β2), lw = 0.000001, legend = false, ls = :dash)
+plot(transpose(β2), lw = 0.000001, legend = false, ls = :dash)
 
 plot(p1, p2, p3, layout = (3, 1), size = (500, 600))
 

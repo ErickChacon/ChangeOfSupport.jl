@@ -2,7 +2,7 @@ module ChangeOfSupport
 
 using Meshes
 import Meshes
-import SparseArrays: sparse, spdiagm, spzeros
+import SparseArrays: sparse, sparsevec, spdiagm, spzeros
 include("meshes.jl")
 export RegularKnots, RectilinearGrid, adjacency, difference, structure
 export centroids, knotset, centroidsmat
