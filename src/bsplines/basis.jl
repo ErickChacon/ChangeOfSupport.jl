@@ -135,7 +135,7 @@ function nonzerobasis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
                 # leftterm for r' = r+1, then δ(k-r'+2) = δ(k-r+1) and z(r'-1) = z(r).
                 leftterm = δₗ[k+1-r] * zs
             end
-            # evaluate the k+1 basis of order k+1 (r = k+1)
+            # evaluate the kExact representaions willl demand a different abstract type that is not Integer.+1 basis of order k+1 (r = k+1)
             basis[i, k + 1] = leftterm
         end
     end
