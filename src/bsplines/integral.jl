@@ -18,7 +18,7 @@ end
 Return an sparse matrix of the integral of the basis functions of `b` up to `x`.
 """
 function integral_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
-    # TODO: this implimentation is slow for large vectors
+    # TODO: this implementation is slow for large vectors
     # define new knots and step
     b = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
     knotstep = step(range(extendedknots(b)))
@@ -27,7 +27,7 @@ function integral_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
 end
 
-function _integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
+function _pseudointegral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     # define new knots and step
     bi = RegularBsplines(b.lower, b.upper, b.df + 1, b.order + 1)
     knotstep = step(range(extendedknots(bi)))
@@ -41,14 +41,24 @@ function _integral(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     return ibasis, indices
 end
 
-function integral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
+function pseudointegral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
     # 1) we compute only the `bs.order` non-zero basis splines and the indices for the
     # last nons-zero basis spline of each element in `x`.
-    ibasis, lastindices = _integral(x, bs)
+    ibasis, lastindices = _pseudointegral(x, bs)
     # 2) we convert the basis to a sparse design matrix associated to the `bs.df` basis
     # splines.
     sparsebasis(ibasis, lastindices, bs.df)
 end
+
+function basis(x::CartesianGrid{1}, bs::RegularBsplines)
+    gridknots = range(x)[1]
+    ibasis, indices = _pseudointegral(gridknots, bs)
+    sparsebasis(ibasis[2:end, :], indices[2:end], bs.df) -
+        sparsebasis(ibasis[1:(end-1), :], indices[1:(end-1)], bs.df)
+    # diff(ibasis, dims = 1) ./ step(gridknots)
+end
+
+
 
 # function basis(x::CartesianGrid{1}, b::RegularBsplines)
 #     gridknots = range(x)[1]
@@ -195,9 +205,9 @@ end
 # end
 
 
-function basis(x::CartesianGrid{1}, b::RegularBsplines)
+function basis_old(x::CartesianGrid{1}, b::RegularBsplines)
     gridknots = range(x)[1]
-    ibasis = integral(gridknots, b)
+    ibasis = integral_old(gridknots, b)
     diff(ibasis, dims = 1) ./ step(gridknots)
 end
 

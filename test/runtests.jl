@@ -160,7 +160,7 @@ vals = [-10.0, vals..., 10.0]
 bla1 == bla2
 
 # integral
-bs = RegularBsplines(-10.0, 10.0, 10, 2)
+bs = RegularBsplines(-10.0, 10.0, 15, 2)
 vals = -10 .+ 20 * rand(10)
 vals = [-10.0, vals..., 10.0]
 @time bla = cs.integral(vals, bs);
@@ -171,21 +171,50 @@ bs = RegularBsplines(-10.0, 10.0, 15, 2)
 tgrid = CartesianGrid(Point(-10.0), Point(10.0), dims = (5,))
 bla1, ind1 = cs._integral(range(tgrid)[1][1:(end-1)], bs)
 bla2, ind2 = cs._integral(range(tgrid)[1][2:end], bs)
-cs.sparsebasis(bla2, ind2, bs.df)
 cs.sparsebasis(bla1, ind1, bs.df)
+cs.sparsebasis(bla2, ind2, bs.df)
+bla1t = cs.integral_old(range(tgrid)[1][1:(end-1)], bs)
+bla2t = cs.integral_old(range(tgrid)[1][2:end], bs)
+bla2t - bla1t
+
+cs.sparsebasis(vcat(bla1[1,:]', bla2), [ind1[1], ind2...], bs.df)
+cs.sparsebasis(bla2, ind2, bs.df) - cs.sparsebasis(bla1, ind1, bs.df) +
+sparsebasis2(bla2t[1,1], ind1, ind2, 2, bs.df) |>
+    x -> x ./ step(range(tgrid)[1])
+
+basis(tgrid, bs)
+basis_old(tgrid, bs)
+
+collect(1:10)[1:(end-1)]
 
 # Bc = basis(tgrid, bs)
 
-function sparsebasis2(val::Real, indices1::Vector, indices2::Vector, df::Int, order::Int)
-    # (n, order) = size(basis)
+function sparsebasis2(val::Real, indices1::Vector, indices2::Vector, order::Int, df::Int)
     n = length(indices1)
-    reps = indices2 - indices1 .+ 1
-    I = [i for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
-    J = [(indices1[i] - order + k) for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
+    reps = indices2 - indices1
+    # J = (indices1[i] - order + 1):(indices2[i] - order + 1)
+    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
+    J = vcat([(indices1[i] - order + 1):(indices2[i] - order) for i in 1:n]...)
+    # (n, order) = size(basis)
+    # n = length(indices1)
+    # I = [i for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
+    # J = [(indices1[i] - order + k) for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
+    # sparse(I, J, val, n, df + 1)[:, 1:df]
+    # sparsevec(J, val)
     sparse(I, J, val, n, df + 1)[:, 1:df]
 end
 
+cs.sparsebasis(bla2, ind2, bs.df) - cs.sparsebasis(bla1, ind1, bs.df)
+# +
+#     sparsebasis2(1.42857, ind1, ind2, 2, bs.df)
+
+
+
+vcat([i:i+3 for i in 1:10]...)
+
 sparsebasis2(10.0, ind1, ind2, 10, 2)
+
+sparsevec([1, 3, 4], 4.0)
 
 
 
