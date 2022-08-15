@@ -4,10 +4,14 @@
 Basis splines of specified `order` with `df` degrees of freedom, using regular knots with
 `lower` and `upper` bounds.
 
-In order to evaluate the basis functions, we add `order - 1` knots to the left of `lower`
-such as there are `order - 1` basis starting at the additional left knots, 1 basis
-starting at `lower` and the remainin basis starts at the `ni` internal knots (ni = df -
-order). We return, `df` basis functions of the specified `order`.
+The `order` is the number of parameters required to represent the polinomial function.
+For example, a quadratic polinomial has `order` 3. The degrees of freedom `df` is the
+number of desired basis splines.
+
+In order to evaluate the `df` basis functions using the recursive relationship of basis
+splines. We need to create `order - 1` knots to the left of `lower` which are the starting
+points of `order - 1` basis functions. One basis function starts at `lower` and the
+remaining functions start at the `df - order` internal knots.
 """
 struct RegularBsplines
     lower::Number
@@ -16,6 +20,12 @@ struct RegularBsplines
     order::Int
 end
 
+Base.minimum(bs::RegularBsplines) = bs.lower
+Base.maximum(bs::RegularBsplines) = bs.upper
+Base.extrema(bs::RegularBsplines) = minimum(bs), maximum(bs)
+Base.length(bs::RegularBsplines) = bs.df
+order(bs::RegularBsplines) = bs.order
+
 # ----------------------------------------------
 # Auxiliary functions to evaluate basis splines.
 # ----------------------------------------------
@@ -23,40 +33,18 @@ end
 """
     extendedknots(bs::RegularBsplines)
 
-Return an extended RegularKnots object necessary to evaluate the RegularBsplines `bs`.
+Return an extended `RegularKnots` object necessary to evaluate the RegularBsplines `bs`
+using the recurrent relationship.
+
+Creates a sequence of `knots` where there are `bs.order - 1` knots to the left of
+`bs.lower`, `bs.order` knots to the right of `bs.upper` and there are `bs.df - bs.order`
+internal knots between `bs.left` and `bs.right`.
 """
 function extendedknots(bs::RegularBsplines)
     RegularKnots(bs.lower, bs.upper, bs.df - bs.order, bs.order - 1, bs.order)
 end
 
-"""
-    get_x_index(x::Number, knots::AbstractRange)
-
-Get index `s` such as `knots[s] ≤ x < knots[s+1]`. We use it to identify basis splines of
-certain order that are non-zero at x.
-"""
-function get_x_index(x::Number, knots::AbstractRange)
-
-    # check if x is inside the range
-    if x < knots[1]
-        return 0
-    elseif x >= knots[end]
-        return length(knots)
-    end
-
-    # compute index if x is inside the range
-    i = 1 + floor(Int, (x - knots[1]) / step(knots))
-
-    # simple fix in case condition knots[i] ≤ x < knots[i+1] is not hold
-    if x >= knots[i + 1]
-        i = i + 1
-    end
-    if x < knots[i]
-        i = i - 1
-    end
-
-    return i
-end
+step(bs::RegularBsplines) = step(range(extendedknots(bs)))
 
 # ---------------------------------------------------------------------
 # Auxiliary function to associate a basis splines with a CartesianGrid.
