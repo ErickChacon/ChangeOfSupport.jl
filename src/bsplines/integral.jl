@@ -52,11 +52,33 @@ end
 
 function basis(x::CartesianGrid{1}, bs::RegularBsplines)
     gridknots = range(x)[1]
+    gridstep = step(gridknots)
+    constant_integral = step(range(extendedknots(bs)))
     ibasis, indices = _pseudointegral(gridknots, bs)
+    ibasis = ibasis ./ gridstep
     sparsebasis(ibasis[2:end, :], indices[2:end], bs.df) -
-        sparsebasis(ibasis[1:(end-1), :], indices[1:(end-1)], bs.df)
+        sparsebasis(ibasis[1:(end-1), :], indices[1:(end-1)], bs.df) +
+        constant_term(constant_integral / gridstep, indices, bs)
     # diff(ibasis, dims = 1) ./ step(gridknots)
 end
+
+function constant_term(val::Real, indices::Vector, bs::RegularBsplines)
+    n = length(indices) - 1
+    reps = diff(indices)
+    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
+    J = vcat([(indices[i] - bs.order + 1):(indices[i+1] - bs.order) for i in 1:n]...)
+    sparse(I, J, val, n, bs.df + 1)[:, 1:bs.df]
+end
+
+
+function constant_term(val::Real, indices1::Vector, indices2::Vector, order::Int, df::Int)
+    n = length(indices1)
+    reps = indices2 - indices1
+    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
+    J = vcat([(indices1[i] - order + 1):(indices2[i] - order) for i in 1:n]...)
+    sparse(I, J, val, n, df + 1)[:, 1:df]
+end
+
 
 
 

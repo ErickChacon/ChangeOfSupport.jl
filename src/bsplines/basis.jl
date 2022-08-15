@@ -1,7 +1,7 @@
 """
     basis(x, bs::RegularBsplines)
 
-Return an sparse vector of the evaluation of the basis functions of `bs` at `x`.
+Return an sparse vector of the evaluation of the basis splines `bs` at `x`.
 
 The output is a sparse vector of size `bs.df` is x is a `Number`, and is a sparse matrix
 of size `n×bs.df` if x is a `Vector`. The algorithm is based on De Boor (2001, page 110).

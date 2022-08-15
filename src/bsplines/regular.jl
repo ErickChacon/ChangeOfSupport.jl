@@ -1,7 +1,7 @@
 """
     RegularBsplines(lower, upper, order, df)
 
-Bsplines of specified `order` with `df` degrees of freedom, using regular knots with
+Basis splines of specified `order` with `df` degrees of freedom, using regular knots with
 `lower` and `upper` bounds.
 
 In order to evaluate the basis functions, we add `order - 1` knots to the left of `lower`
@@ -16,7 +16,9 @@ struct RegularBsplines
     order::Int
 end
 
+# ----------------------------------------------
 # Auxiliary functions to evaluate basis splines.
+# ----------------------------------------------
 
 """
     extendedknots(bs::RegularBsplines)
@@ -30,7 +32,7 @@ end
 """
     get_x_index(x::Number, knots::AbstractRange)
 
-Get index i such as `knots[i] ≤ x < knots[i+1]`. We use it to identify basis splines of
+Get index `s` such as `knots[s] ≤ x < knots[s+1]`. We use it to identify basis splines of
 certain order that are non-zero at x.
 """
 function get_x_index(x::Number, knots::AbstractRange)
@@ -56,7 +58,9 @@ function get_x_index(x::Number, knots::AbstractRange)
     return i
 end
 
+# ---------------------------------------------------------------------
 # Auxiliary function to associate a basis splines with a CartesianGrid.
+# ---------------------------------------------------------------------
 
 """
     CartesianGrid(b::RegularBsplines)
