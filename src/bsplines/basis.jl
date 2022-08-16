@@ -1,71 +1,56 @@
 """
     basis(x, bs::RegularBsplines)
 
-Return an sparse vector of the evaluation of the basis splines `bs` at `x`.
+Returns an sparse evaluation of the basis splines `bs` at `x`.
 
-The output is a sparse vector of size `bs.df` is x is a `Number`, and is a sparse matrix
-of size `n×bs.df` if x is a `Vector`. The algorithm is based on De Boor (2001, page 110).
+The returning object is sparse because at any value, there are only `bs.order` non-zero
+basis splines. The output is a sparse vector of size `bs.df` if `x` is a `Number`, and is
+a sparse matrix of size `length(x)×bs.df` if `x` is a `Vector` or `AbstractRange`.
 """
-function basis(x::Number, bs::RegularBsplines)
-    # 1) we compute only the `bs.order` non-zero basis splines and the index for the last
-    # nons-zero basis spline.
+function basis(x::Union{Number,AbstractRange,Vector}, bs::RegularBsplines)
+    # 1) computes the `bs.order` non-zero basis splines and the indices for the last
+    # non-zero basis splines of each element in `x`.
     basis, lastindices = nonzerobasis(x, bs)
-    # 2) using the non-zero basis splines and the index, we create an sparse vector
-    # associated to the `bs.df` basis splines.
+    # 2) converts the basis to a sparse array associated to the `bs.df` basis splines at
+    # `x`.
     sparsebasis(basis, lastindices, bs.df)
 end
 
 """
-    basis(x::AbstractVector, bs::RegularBsplines)
+    nonzerobasis(x::Number, bs::RegularBsplines)
 
-Return an sparse matrix of the evaluation of Bsplines `bs` at `x`.
+Returns the `bs.order` non-zero basis splines at `x` and the index of the last non-zero
+basis spline.
 
-The sparse matrix has `length(x)` rows and `bs.df` columns. The algorithm is based on De
-Boor (2001, page 110). There are only `bs.order` non-zero functions at each value of `x`.
+The returning vector has `bs.order` elements corresponding to the non-zero basis splines at
+`x`. The index of the last non-zero basis spline is also returned to know which basis
+splines are non-zero. The algorithm is based on De Boor (2001, page 110).
 """
-function basis(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
-    # 1) we compute only the `bs.order` non-zero basis splines and the indices for the
-    # last nons-zero basis spline of each element in `x`.
-    basis, lastindices = nonzerobasis(x, bs)
-    # 2) we convert the basis to a sparse design matrix associated to the `bs.df` basis
-    # splines.
-    sparsebasis(basis, lastindices, bs.df)
-end
-
-"""
-    nonzerobasis(x::Number, b::RegularBsplines)
-
-Returns the `b.order` non-zero basis splines at `x` and the index of the last non-zero
-basis splines.
-
-The returning vector has `b.order` elements corresponding to the non-zero basis splines at
-`x`. The algorithm is based on De Boor (2001, page 110).
-"""
-function nonzerobasis(x::Number, b::RegularBsplines)
+function nonzerobasis(x::Number, bs::RegularBsplines)
     # knots to compute basis splines
-    knots = extendedknots(b)
+    knots = extendedknots(bs)
     knotrange = range(knots)
 
     # initialize basis
-    basis = zeros(b.order)
+    basis = zeros(bs.order)
 
     # check x inside bsplines domain
-    if !(b.lower ≤ x ≤ b.upper)
-        throw(DomainError(x, "The values of x should lie in the range of b."))
+    if !(bs.lower ≤ x ≤ bs.upper)
+        throw(DomainError(x, "The values of x should lie in the range of bs."))
     end
 
     # s index such as knots[s] ≤ x < knots[s+1]
-    s_x = get_x_index(x, knotrange)
+    s_x = get_index(x, knotrange)
 
     # order = 1
     basis[1] = 1
 
     # order > 1
-    δᵣ = zeros(b.order - 1)
-    δₗ = zeros(b.order - 1)
+    δᵣ = zeros(bs.order - 1)
+    δₗ = zeros(bs.order - 1)
 
     # uses basis of order k to compute basis of order k+1
-    for k = 1:(b.order - 1)
+    for k = 1:(bs.order - 1)
         # create left and right differences
         δᵣ[k] = knotrange[s_x + k] - x
         δₗ[k] = x - knotrange[s_x + 1 - k]
@@ -86,44 +71,46 @@ function nonzerobasis(x::Number, b::RegularBsplines)
 end
 
 """
-    nonzerobasis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
+    nonzerobasis(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
 
-Returns the `b.order` non-zero basis splines for each element of `x` and indices for the last non-zero basis splines.
+Returns the `bs.order` non-zero basis splines for each element of `x` and indices for the
+last non-zero basis splines.
 
-The returning matrix has `length(x)` rows and `b.order` columns, each row correspond to
-the non-zero basis splines of each element in `x`. The algorithm is based on De Boor
-(2001, page 110).
+The returning matrix has `length(x)` rows and `bs.order` columns, each row correspond to
+the non-zero basis splines of each element in `x`. The indices of the last non-zero basis
+splines are also returned to know which basis splines are non-zero. The algorithm is based
+on De Boor (2001, page 110).
 """
-function nonzerobasis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
+function nonzerobasis(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
     n = length(x)
 
     # knots to compute basis splines
-    knots = extendedknots(b)
+    knots = extendedknots(bs)
     knotrange = range(knots)
 
-    # initialize basis (n × b.order) and indices (s: knots[s] ≤ x < knots[s+1])
-    basis = zeros(n, b.order)
+    # initialize basis (n × bs.order) and indices (s: knots[s] ≤ x < knots[s+1])
+    basis = zeros(n, bs.order)
     indices = zeros(Int, n)
 
     # check x inside bsplines domain
-    if !all(b.lower ≤ val ≤ b.upper for val in x)
-        throw(DomainError(x, "The values of x should lie in the range of b."))
+    if !all(bs.lower ≤ val ≤ bs.upper for val in x)
+        throw(DomainError(x, "The values of x should lie in the range of bs."))
     end
 
-    # computing 'b.order' non-zero functions at each 'x'
+    # computing 'bs.order' non-zero functions at each 'x'
     for i in 1:n
-        indices[i] = get_x_index(x[i], knotrange)
+        indices[i] = get_index(x[i], knotrange)
         s_x = indices[i]
 
         # order = 1
         basis[i, 1] = 1
 
         # order > 1
-        δᵣ = zeros(b.order - 1)
-        δₗ = zeros(b.order - 1)
+        δᵣ = zeros(bs.order - 1)::Vector
+        δₗ = zeros(bs.order - 1)
 
         # uses basis of order k to compute basis of order k+1
-        for k = 1:(b.order - 1)
+        for k = 1:(bs.order - 1)
             # create left and right differences
             δᵣ[k] = knotrange[s_x + k] - x[i]
             δₗ[k] = x[i] - knotrange[s_x + 1 - k]
@@ -145,12 +132,19 @@ function nonzerobasis(x::Union{AbstractRange,Vector}, b::RegularBsplines)
 end
 
 """
-    sparsebasis(basis::Vector, lastindex::Int, df::Int)
+    sparsebasis(basis, lastindices, df::Int)
 
-Converts the non-zero basis splines to an sparse matrix of dimension `n×df`.
+Converts the non-zero `basis` splines to an sparse array using the `lastindices` of the
+non-zero basis.
+
+The returning object is a sparse vector of dimension `df` if `basis` is a `Vector` and a
+sparse matrix of dimension `size(basis, 1) × df` if the `basis` is a `Matrix`.
+
+Given that the last non-zero basis spline has index `s`, it is known that the non-zero
+function are those with indices (s, s-1, ..., s-order+1).
 """
 function sparsebasis(basis::Vector, lastindex::Int, df::Int)
-    order = length(basis) # number of non-zero basis splines
+    order = length(basis)                      # number of non-zero basis splines
     J = [(lastindex-order+k) for k in 1:order] # indices of basis splines
     sparsevec(J, basis, df + 1)[1:df]
 end
@@ -164,6 +158,40 @@ end
 
 # we can improve sparsebasis considering the restriction (lower ≤ x < upper) instead of
 # (lower ≤ x ≤ upper).
+
+"""
+    get_index(x::Number, knots::AbstractRange)
+
+Get index `s` such as `knots[s] ≤ x < knots[s+1]`. Note that the basis spline s-th is the
+last function that is non-zero. We use it to identify basis splines of certain `order`
+that are non-zero at x.
+"""
+function get_index(x::Number, knots::AbstractRange)
+
+    # check if x is inside the range
+    if x < knots[1]
+        return 0
+    elseif x >= knots[end]
+        return length(knots)
+    end
+
+    # compute index if x is inside the range
+    s = 1 + floor(Int, (x - knots[1]) / step(knots))
+
+    # simple fix in case condition knots[s] ≤ x < knots[s+1] is not hold
+    if x >= knots[s + 1]
+        s = s + 1
+    end
+    if x < knots[s]
+        s = s - 1
+    end
+
+    return s
+end
+
+#---------------
+# Old functions.
+#---------------
 
 # The following functions are just old functions used to be compared with current
 # versions.
@@ -181,7 +209,7 @@ function basis_sparse(x::Number, b::RegularBsplines)
     end
 
     # order = 1
-    j = get_x_index(x, knotrange)
+    j = get_index(x, knotrange)
     basis[j] = 1
 
     # order > 1
@@ -229,7 +257,7 @@ function basis_sparse(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     for i in 1:n
         # order = 1
         ibase = (i-1) * b.order
-        j_x = get_x_index(x[i], knotrange)
+        j_x = get_index(x[i], knotrange)
         basis[ibase + 1] = 1
 
         # order > 1
