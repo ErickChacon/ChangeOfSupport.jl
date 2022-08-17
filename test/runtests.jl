@@ -3,6 +3,7 @@ using ChangeOfSupport
 using Test
 using Meshes
 using SparseArrays
+using LinearAlgebra
 
 const cs = ChangeOfSupport
 
@@ -83,8 +84,8 @@ end
 
 @testset "Auxiliary variables for RegularBsplines" begin
     # get x index
-    @test map(x -> cs.get_x_index(x, 1:10), [-1, 1, 9, 11]) == [0, 1, 9, 10]
-    @test map(x -> cs.get_x_index(x, 1:10), [2.1, 5.1, 7.9]) == [2, 5, 7]
+    @test map(x -> cs.get_index(x, 1:10), [-1, 1, 9, 11]) == [0, 1, 9, 10]
+    @test map(x -> cs.get_index(x, 1:10), [2.1, 5.1, 7.9]) == [2, 5, 7]
 
     # extendedknots
     knots = extendedknots(RegularBsplines(-10.0, 8.0, 10, 2))
@@ -99,7 +100,7 @@ end
     # ORDER 1
     bs = RegularBsplines(-10.0, 10.0, 10, 1)
     # adequate domain
-    errormessage =  "The values of x should lie in the range of b."
+    errormessage =  "The values of x should lie in the range of bs."
     @test_throws DomainError(-10.1, errormessage) basis(-10.1, bs)
     @test_throws DomainError(10.1, errormessage) basis(10.1, bs)
     # basis at knots
@@ -131,7 +132,7 @@ end
     # ORDER 1
     bs = RegularBsplines(-10.0, 10.0, 10, 1)
     # adequate domain
-    errormessage =  "The values of x should lie in the range of b."
+    errormessage =  "The values of x should lie in the range of bs."
     @test_throws DomainError([-10.1, 0.0], errormessage) basis([-10.1, 0.0], bs)
     @test_throws DomainError([10.1, 0.0], errormessage) basis([10.1, 0.0], bs)
     @test_throws DomainError([-10.1, 10.1], errormessage) basis([-10.1, 10.1], bs)
@@ -151,171 +152,29 @@ end
         spdiagm(9, 10, 0 => fill(0.5, 9), 1 => fill(0.5, 9), 2 => fill(0.0, 8))
 end
 
-# sparsity
-bs = RegularBsplines(-10.0, 10.0, 100000, 3)
-vals = -10 .+ 20 * rand(200000)
-vals = [-10.0, vals..., 10.0]
-@time bla1 = cs.basis_sparse(vals, bs);
-@time bla2 = basis(vals, bs);
-bla1 == bla2
+@testset "RegularBsplines integrals" begin
+    # ORDER 1
+    bs = RegularBsplines(-10.0, 10.0, 10, 1)
+    @test integral([-10.0], bs) == spzeros(1, bs.df)
+    @test integral([10.0], bs) == sparse(fill(1, bs.df), 1:bs.df, fill(step(bs), bs.df))
+    @test integral(-9:2:9, bs) == LowerTriangular(fill(step(bs), (10, bs.df)) - LinearAlgebra.I)
 
-# integral
-bs = RegularBsplines(-10.0, 10.0, 15, 2)
-vals = -10 .+ 20 * rand(10)
-vals = [-10.0, vals..., 10.0]
-@time bla = cs.integral(vals, bs);
-@time bla2 = cs.integral_old(vals, bs);
-
-# CartesianGrid
-bs = RegularBsplines(-10.0, 10.0, 15, 2)
-tgrid = CartesianGrid(Point(-10.0), Point(10.0), dims = (5,))
-bla1, ind1 = cs._integral(range(tgrid)[1][1:(end-1)], bs)
-bla2, ind2 = cs._integral(range(tgrid)[1][2:end], bs)
-cs.sparsebasis(bla1, ind1, bs.df)
-cs.sparsebasis(bla2, ind2, bs.df)
-bla1t = cs.integral_old(range(tgrid)[1][1:(end-1)], bs)
-bla2t = cs.integral_old(range(tgrid)[1][2:end], bs)
-bla2t - bla1t
-
-cs.sparsebasis(vcat(bla1[1,:]', bla2), [ind1[1], ind2...], bs.df)
-cs.sparsebasis(bla2, ind2, bs.df) - cs.sparsebasis(bla1, ind1, bs.df) +
-sparsebasis2(bla2t[1,1], ind1, ind2, 2, bs.df) |>
-    x -> x ./ step(range(tgrid)[1])
-
-basis(tgrid, bs)
-basis_old(tgrid, bs)
-
-collect(1:10)[1:(end-1)]
-
-# Bc = basis(tgrid, bs)
-
-function sparsebasis2(val::Real, indices1::Vector, indices2::Vector, order::Int, df::Int)
-    n = length(indices1)
-    reps = indices2 - indices1
-    # J = (indices1[i] - order + 1):(indices2[i] - order + 1)
-    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
-    J = vcat([(indices1[i] - order + 1):(indices2[i] - order) for i in 1:n]...)
-    # (n, order) = size(basis)
-    # n = length(indices1)
-    # I = [i for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
-    # J = [(indices1[i] - order + k) for k in 1:(indices2[i]-indices1[i]+1) for i in 1:n]
-    # sparse(I, J, val, n, df + 1)[:, 1:df]
-    # sparsevec(J, val)
-    sparse(I, J, val, n, df + 1)[:, 1:df]
+    # ORDER 2
+    bs = RegularBsplines(-10.0, 10.0, 11, 2)
+    @test integral(-10:2:10, bs) == LowerTriangular(fill(step(bs), (11, bs.df)) - LinearAlgebra.I)
 end
 
-cs.sparsebasis(bla2, ind2, bs.df) - cs.sparsebasis(bla1, ind1, bs.df)
-# +
-#     sparsebasis2(1.42857, ind1, ind2, 2, bs.df)
+@testset "RegularBsplines CartesianGrid" begin
+    # ORDER 1
+    bs = RegularBsplines(-10.0, 10.0, 10, 1)
+    tgrid = CartesianGrid(Point(-10.0), Point(10.0), dims = (10,))
+    @test basis(tgrid, bs) == Diagonal(fill(1.0, 10))
 
-
-
-vcat([i:i+3 for i in 1:10]...)
-
-sparsebasis2(10.0, ind1, ind2, 10, 2)
-
-sparsevec([1, 3, 4], 4.0)
-
-
-
-# @time bla2, ind2 = cs._integral(vals, bs);
-
-# range(extendedknots(bs)) |> collect
-# step(range(extendedknots(bs)))
-# vals = -10 .+ 20 * rand(5)
-vals = [-2]
-# vals = [-10.0, vals..., 10.0]
-# cs.get_x_index(jj)
-
-@time bla2, ind2 = cs._integral(vals, bs);
-@time bla1 = cs.integral(vals, bs);
-bla1
-cs.sparsebasis(bla2, ind2, bs.df)
-
-cs.nonzerobasis(vals, bs)[1]
-# bla1 == bla2
-#
-Matrix(bla1)
-
-
-
-
-
-length(range(extendedknots(bs)))
-# df + 
-
-# @time bla = findall(x -> x < 2, 1:10000000)
-
-x = 10.0
-bla1 = cs.basis_sparse(x, bs)
-bla2 = basis(x, bs)
-bla1 == bla2
-
-# @time bla2, jx2 = cs._basis(vals, bs);
-# cs._sparsebasis(bla2, jx2, bs.df)
-
-
-
-ss = rand(3, 4)
-cat(ss, dims = 2)
-
-vec(ss)
-
-# bla1
-#
-# [(i+2) for i in 1:10]
-
-
-# for i = 1:length(jx2)
-# end
-
-Matrix(bla1)
-bla2
-
-@time in1 = integral(-10.0:0.9:8.0, bs) |> Matrix;
-@time in2 = cs._integral(-10.0:0.9:8.0, bs);
-
-    # knotstep * 
-reverse(cumsum(reverse(in2, dims = 2), dims = 2), dims = 2)
-
-
-# bs2 = RegularBsplines(-10.0, 10.0, 40 + 1, 3 + 1)
-# @time ibasis1 = basis(-10.0:0.01:10.0, bs);
-# @time ibasis2 = cs.basis_old(-10.0:0.01:10.0, bs);
-@time bla = integral(-10.0:2.0:10.0, bs)
-
-# integral(2.0, bs)
-
-# ibasis1 == ibasis2
-
-
-# [2:bs.df]
-
-@time bla = reverse(ibasis)
-
-@time cumsum(ibasis[end:-1:1])[end:-1:1]
-@time reverse(cumsum(reverse(ibasis)))
-
-# bla[1] == 0.0
-
-
-cumsum(reverse(ibasis))
-
-
-Matrix(integral(-9.0, bs) .+ 1.0)
-
-    b = 
-    knotstep = step(range(extendedknots(b)))
-    # compute integral
-    ibasis = basis(x, b)[2:b.df]
-    knotstep * reverse(cumsum(reverse(ibasis)))
-
-
-
-
-
-# bla = basis(1.0, bs)
-# Matrix(bla)
+    # ORDER 2
+    bs = RegularBsplines(-10.0, 10.0, 11, 2)
+    tgrid = CartesianGrid(Point(-10.0), Point(10.0), dims = (10,))
+    @test basis(tgrid, bs) == spdiagm(0 => fill(0.5, 10), 1 => fill(0.5, 10))[1:10,:]
+end
 
 
 # @testset "Difference and structure matrices" begin
