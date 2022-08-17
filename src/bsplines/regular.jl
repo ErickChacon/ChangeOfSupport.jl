@@ -44,12 +44,13 @@ function extendedknots(bs::RegularBsplines)
     RegularKnots(bs.lower, bs.upper, bs.df - bs.order, bs.order - 1, bs.order)
 end
 
-step(bs::RegularBsplines) = step(range(extendedknots(bs)))
+Base.step(bs::RegularBsplines) = step(range(extendedknots(bs)))
 
 # ---------------------------------------------------------------------
 # Auxiliary function to associate a basis splines with a CartesianGrid.
 # ---------------------------------------------------------------------
 
+# TODO: Check this function
 """
     CartesianGrid(b::RegularBsplines)
 
