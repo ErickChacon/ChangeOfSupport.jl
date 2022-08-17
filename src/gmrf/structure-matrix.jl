@@ -133,7 +133,7 @@ function difference(g::CartesianGrid{2}; order = 1, cyclic = false)
 end
 
 """
-Return the structure matrix (S) of specified `order` associated to a `CartesianGrid. The
+Return the structure matrix (S) of specified `order` associated to a `CartesianGrid`. The
 structure matrix is defined such as Q = κS, where `Q` is the precision matrix of a GMRF or
 IGMRF. An additional paramater δ can be defined such as S = D'D + δ*I, where D is a
 difference matrix.

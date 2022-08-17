@@ -83,9 +83,9 @@ function fullintegral(jstart::Vector, jfinish::Vector, bs::RegularBsplines)
     sparse(I, J, step(bs), n, bs.df + 1)[:, 1:bs.df]
 end
 
-# --------------
-# Old functions.
-# --------------
+# ------------------------------
+# Old functions. Needs cleaning.
+# ------------------------------
 
 
 """
@@ -117,14 +117,15 @@ function integral_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
 end
 
-# function boundaryknots(b::RegularBsplines)
-#     RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
-# end
-
 # knots where basis functions start and upper boundary
 function startingknots(b::RegularBsplines)
     RegularKnots(b.lower, b.upper, b.df - b.order, b.order - 1, -1)
 end
+
+# function boundaryknots(b::RegularBsplines)
+#     RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+# end
+
 
 # # centroid reference for basis function
 # function centroids(b::RegularBsplines)
@@ -180,14 +181,6 @@ function basis_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     end
 
     return basis[:, 1:b.df]
-end
-
-
-
-function basis_old(x::CartesianGrid{1}, b::RegularBsplines)
-    gridknots = range(x)[1]
-    ibasis = integral_old(gridknots, b)
-    diff(ibasis, dims = 1) ./ step(gridknots)
 end
 
 function basis(x::RectilinearGrid{1}, b::RegularBsplines)

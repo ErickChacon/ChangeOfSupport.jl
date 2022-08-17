@@ -189,9 +189,9 @@ function get_index(x::Number, knots::AbstractRange)
     return s
 end
 
-#---------------
-# Old functions.
-#---------------
+# ------------------------------
+# Old functions. Needs cleaning.
+# ------------------------------
 
 # The following functions are just old functions used to be compared with current
 # versions.
