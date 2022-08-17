@@ -1,4 +1,26 @@
 """
+    basis(x::CartesianGrid{1}, bs::RegularBsplines)
+
+Returns an sparse evaluation of the basis splines `bs` at elements of `x`.
+
+Each element of `x` is a `Segment`. We consider the evaluation of `bs` at a `Segment` as
+mean measure defined as the integral of the basis splines over it divided by the length of
+the `Segment`. The output is a sparse matrix of size `length(x)×bs.df`.
+"""
+function basis(x::CartesianGrid{1}, bs::RegularBsplines)
+    gridknots = range(x)[1]
+    # 1) compute the integral of the non-zero basis from -∞ to each vertex
+    ibasis, indices = nonzerointegral(gridknots, bs)
+    # 2) difference between the integral at ending vertices and starting vertices
+    output = sparsebasis(ibasis[2:end, :], indices[2:end], bs.df)
+    output -= sparsebasis(ibasis[1:(end-1), :], indices[1:(end-1)], bs.df)
+    # 3) add constant fullintegral for splines that are complete at ending vertices
+    output += fullintegral(indices[1:(end-1)] .- bs.order .+ 1, indices[2:end] .- bs.order, bs)
+    # 4) obtain mean measure by dividing integral of segments over length of segments
+    output /= step(gridknots)
+end
+
+"""
     integral(x, bs::RegularBsplines)
 
 Returns an sparse evaluation of the integral of the bases splines `bs` from `-∞` to `x`.
@@ -34,7 +56,7 @@ function nonzerointegral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
     # define new knots and step
     bi = RegularBsplines(bs.lower, bs.upper, bs.df + 1, bs.order + 1)
     knotstep = step(range(extendedknots(bi)))
-    # compute integral
+    # compute non-zero basis of order `bs.order + 1`
     ibasis, indices = nonzerobasis(x, bi)
     # remove first column
     ibasis = ibasis[:, 2:(bi.order)]
@@ -67,7 +89,7 @@ end
 
 
 """
-    integral(x::Number, b::RegularBsplines)
+    integral_old(x::Number, b::RegularBsplines)
 
 Return an sparse vector of the integral of the basis functions of `b` up to `x`.
 """
@@ -94,45 +116,6 @@ function integral_old(x::Union{AbstractRange,Vector}, b::RegularBsplines)
     ibasis = basis(x, b)[:, 2:b.df]
     knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
 end
-
-function basis(x::CartesianGrid{1}, bs::RegularBsplines)
-    gridknots = range(x)[1]
-    gridstep = step(gridknots)
-    constant_integral = step(range(extendedknots(bs)))
-    ibasis, indices = nonzerointegral(gridknots, bs)
-    ibasis = ibasis ./ gridstep
-    sparsebasis(ibasis[2:end, :], indices[2:end], bs.df) -
-        sparsebasis(ibasis[1:(end-1), :], indices[1:(end-1)], bs.df) +
-        constant_term(constant_integral / gridstep, indices, bs)
-    # diff(ibasis, dims = 1) ./ step(gridknots)
-end
-
-function constant_term(val::Real, indices::Vector, bs::RegularBsplines)
-    n = length(indices) - 1
-    reps = diff(indices)
-    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
-    J = vcat([(indices[i] - bs.order + 1):(indices[i+1] - bs.order) for i in 1:n]...)
-    sparse(I, J, val, n, bs.df + 1)[:, 1:bs.df]
-end
-
-
-function constant_term(val::Real, indices1::Vector, indices2::Vector, order::Int, df::Int)
-    n = length(indices1)
-    reps = indices2 - indices1
-    I = vcat([repeat([i], reps[i]) for i in 1:n]...)
-    J = vcat([(indices1[i] - order + 1):(indices2[i] - order) for i in 1:n]...)
-    sparse(I, J, val, n, df + 1)[:, 1:df]
-end
-
-
-
-
-# function basis(x::CartesianGrid{1}, b::RegularBsplines)
-#     gridknots = range(x)[1]
-#     ibasis = integral(gridknots, b)
-#     diff(ibasis, dims = 1) ./ step(gridknots)
-# end
-
 
 # function boundaryknots(b::RegularBsplines)
 #     RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
