@@ -42,6 +42,23 @@ function integral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
 end
 
 """
+    fullintegral(jstart::Vector, jfinish::Vector, bs::RegularBsplines)
+
+Returns a sparse matrix with the full integral value of a basis spline of `bs` from `jstart`
+to `jfinish`.
+
+The full integral is simply the step size of the knots associated to `bs`. This
+function is used to complete the evaluation of integrals in the case that it is a constant
+known value instead of performing computationally expensive operations.
+"""
+function fullintegral(jstart::Vector, jfinish::Vector, bs::RegularBsplines)
+    n = max(length(jstart), length(jfinish))
+    I = vcat(map(fill, 1:n, jfinish .- jstart .+ 1)...)
+    J = vcat(broadcast(:, jstart, jfinish)...)
+    sparse(I, J, step(bs), n, bs.df + 1)[:, 1:bs.df]
+end
+
+"""
     nonzerointegral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
 
 Returns the integral from `-∞` to `x` of the `bs.order` non-zero basis splines at `x` and
@@ -64,23 +81,6 @@ function nonzerointegral(x::Union{AbstractRange,Vector}, bs::RegularBsplines)
     # compute integral
     ibasis = knotstep * reverse(cumsum(reverse(ibasis, dims = 2), dims = 2), dims = 2)
     return ibasis, indices
-end
-
-"""
-    fullintegral(jstart::Vector, jfinish::Vector, bs::RegularBsplines)
-
-Returns a sparse matrix with the full integral value of a basis spline of `bs` values from
-jstart to jfinish.
-
-The full integral is simply the the step size of the knots associated to `bs`. This
-function is used to complete the evaluation of integrals in the case that it is a constant
-known value instead of performing computationally expensive operations.
-"""
-function fullintegral(jstart::Vector, jfinish::Vector, bs::RegularBsplines)
-    n = max(length(jstart), length(jfinish))
-    I = vcat(map(fill, 1:n, jfinish .- jstart .+ 1)...)
-    J = vcat(broadcast(:, jstart, jfinish)...)
-    sparse(I, J, step(bs), n, bs.df + 1)[:, 1:bs.df]
 end
 
 # ------------------------------
