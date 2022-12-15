@@ -32,3 +32,5 @@ Spatial modelling for data with different supports.
 - [ ] Gibbs sampling
     - [ ] Take advantage of sparsity of the posterior precision matrix
 - [ ] Integration with Turing.jl
+
+### Todo

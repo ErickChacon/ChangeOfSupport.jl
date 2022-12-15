@@ -12,7 +12,7 @@ using LinearAlgebra
 knots = RegularKnots(0, 10, 5, 1, 1)
 range(knots) |> collect
 
-CS.get_x_index(3.0, range(knots))
+CS.get_index(3.0, range(knots))
 
 knots2 = RegularKnots(0, 10, 5, 3, 1)
 range(knots) |> collect
