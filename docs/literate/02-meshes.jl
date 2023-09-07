@@ -19,15 +19,16 @@ range(knots) |> collect
 
 # ## RectilinearGrid
 
-rg = RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(5) * 20,))
+rg = CS.RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(5) * 20,))
 CS.knotset(rg)[1]
 CS.centroids(rg)[1]
 
-rg2 = RectilinearGrid(
+rg2 = CS.RectilinearGrid(
     (-10.0, -10.0),
     (10.0, 10.0),
     (-10 .+ rand(5) * 20, -10 .+ rand(5) * 20)
 )
+
 CS.knotset(rg2)[1]
 CS.knotset(rg2)[2]
 CS.centroids(rg2)[1]

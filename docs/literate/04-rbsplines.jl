@@ -29,6 +29,11 @@ Bs = basis(t, bs)
 # Bss = sparse(Bs)
 # length(findall(!iszero, Bss)) / prod(size(Bss))
 
+function boundaryknots(b::RegularBsplines)
+    RegularKnots(b.lower, b.upper, b.df - b.order, 0, 0)
+end
+
+
 p1 = plot(t, Bs, lw = 1, legend = false, title = "(a) B-splines");
 plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5)
 
@@ -65,7 +70,7 @@ scatter!(marks, Bc, xerr = step(marks) / 2, legend = false,
 vline!(range(tgrid)[1], c = :gray, lw = 0.5, ls = :dash)
 
 # ### Measure the Bsplines over a irregular grid (low resolution)
-igrid = RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(10) * 20,))
+igrid = CS.RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(10) * 20,))
 Bc = basis(igrid, bs)
 
 gridknots = knotset(igrid)[1]
@@ -77,7 +82,7 @@ scatter!(marks, Bc, xerr = diff(gridknots) / 2, legend = false,
 vline!(gridknots, c = :gray, lw = 0.5, ls = :dash)
 
 # ### Measure the Bsplines over a irregular grid (high resolution)
-igrid = RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(40) * 20,))
+igrid = CS.RectilinearGrid((-10.0,), (10.0,), (-10 .+ rand(40) * 20,))
 Bc = basis(igrid, bs)
 
 gridknots = knotset(igrid)[1]
