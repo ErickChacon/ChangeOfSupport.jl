@@ -1,4 +1,3 @@
-using Revise
 using ChangeOfSupport
 using Test
 using Meshes
@@ -68,14 +67,14 @@ end
 @testset "RectilinearGrid" begin
     # 1D
     ik = [-3.0, 1.0, 8.0, -5.0]
-    rgrid = RectilinearGrid((-10.0,), (10.0,), (ik,))
+    rgrid = cs.RectilinearGrid((-10.0,), (10.0,), (ik,))
     @test  knotset(rgrid)[1] == [-10.0, -5.0, -3.0, 1.0, 8.0, 10.0]
     @test centroids(rgrid)[1] == [-7.5, -4.0, -1.0, 4.5, 9.0]
 
     # 2D
     ik1 = [-3.0, 1.0, 8.0, -5.0]
     ik2 = [-7.0, 2.0, 6.0, -2.0]
-    rgrid = RectilinearGrid((-10.0,-10.0), (10.0,10.0), (ik1, ik2))
+    rgrid = cs.RectilinearGrid((-10.0,-10.0), (10.0,10.0), (ik1, ik2))
     @test knotset(rgrid)[1] == [-10.0, -5.0, -3.0, 1.0, 8.0, 10.0]
     @test knotset(rgrid)[2] == [-10.0, -7.0, -2.0, 2.0, 6.0, 10.0]
     @test centroids(rgrid)[1] == [-7.5, -4.0, -1.0, 4.5, 9.0]
