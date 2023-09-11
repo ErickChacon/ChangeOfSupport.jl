@@ -4,7 +4,7 @@ using Meshes
 import Meshes
 import SparseArrays: sparse, sparsevec, spdiagm, spzeros
 include("meshes.jl")
-export RegularKnots, RectilinearGrid, adjacency, difference, structure
+export RegularKnots, adjacency, difference, structure
 export centroids, knotset, centroidsmat
 
 import SuiteSparse # this is only for fixes
