@@ -35,7 +35,8 @@ end
 
 
 p1 = plot(t, Bs, lw = 1, legend = false, title = "(a) B-splines");
-plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5)
+plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5);
+savefig(p1, "plot.pdf")
 
 # ### Evaluating the Bsplines integral from -∞ to x
 Bi = integral(t, bs)

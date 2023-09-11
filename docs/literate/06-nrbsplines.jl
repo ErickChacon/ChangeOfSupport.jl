@@ -32,7 +32,7 @@ scatter!(marks, Bc, xerr = step(marks) / 2, legend = false,
 vline!(range(tgrid)[1], c = :gray, lw = 0.5, ls = :dash)
 
 # Measure Bsplines over a rectilinear grid (iv)
-igrid = RectilinearGrid((-100.0,), (100.0,), (-100 .+ rand(10) * 200,))
+igrid = CS.RectilinearGrid((-100.0,), (100.0,), (-100 .+ rand(10) * 200,))
 Bc = basis(igrid, bs)
 
 gridknots = knotset(igrid)[1]
@@ -57,14 +57,14 @@ sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (100, 8
 coordins = centroidsmat(sgrid)
 Bs = basis(coordins, bs)
 
-# heatmap(transpose(reshape(Bs[:, 9], 100, 80)))
-plot(
-    plot(sgrid, Bs[:, 1]),
-    plot(sgrid, Bs[:, 9]),
-    plot(sgrid, Bs[:, 17]),
-    plot(sgrid, Bs[:, 18]),
-    ylim = (-100, 100), xlim = (-100, 100)
-)
+# # heatmap(transpose(reshape(Bs[:, 9], 100, 80)))
+# plot(
+#     plot(sgrid, Bs[:, 1]),
+#     plot(sgrid, Bs[:, 9]),
+#     plot(sgrid, Bs[:, 17]),
+#     plot(sgrid, Bs[:, 18]),
+#     ylim = (-100, 100), xlim = (-100, 100)
+# )
 
 # Measure Bsplines over a regular grid (iii)
 sgrid = CartesianGrid(Point(-100.0, -100.0), Point(100.0, 100.0), dims = (10, 10))
@@ -78,16 +78,16 @@ function plot_aux(i)
     p
 end
 
-plot(
-    plot_aux(1),
-    plot_aux(9),
-    plot_aux(17),
-    plot_aux(18),
-    ylim = (-100, 100), xlim = (-100, 100)
-)
+# plot(
+#     plot_aux(1),
+#     plot_aux(9),
+#     plot_aux(17),
+#     plot_aux(18),
+#     ylim = (-100, 100), xlim = (-100, 100)
+# )
 
 # Measure Bsplines over a rectilinear grid (iv)
-sgrid = RectilinearGrid((-100.0, -100.0), (100.0, 100.0),
+sgrid = CS.RectilinearGrid((-100.0, -100.0), (100.0, 100.0),
                       (-100 .+ rand(10) * 200, -100 .+ rand(10) * 200))
 Bc = basis(sgrid, bs)
 

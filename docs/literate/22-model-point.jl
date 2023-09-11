@@ -31,7 +31,7 @@ B = basis(t, bs)
 v = B * δ
 
 plot(t, v, lw = 1, title = " (a) Continuous process", label = "W(s)")
-plot!(range(centroids(bs)), δ, st = :scatter, color = :red, ms = 2, msw = 0, label = "δ-IGMRF")
+# plot!(range(centroids(bs)), δ, st = :scatter, color = :red, ms = 2, msw = 0, label = "δ-IGMRF")
 
 
 #' ## Point-level Estimation
