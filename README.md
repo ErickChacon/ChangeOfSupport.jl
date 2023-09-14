@@ -1,12 +1,4 @@
 # ChangeOfSupport.jl
-"""
-    _pseudointegral(x::Vector, b::RegularBsplines)
-
-Return a dense matrix of the integral of the basis functions of `b` up to `x`.
-
-It does not compute the integral of all the basis functions of `b`. It only computes those
-the basis function numbers s-k+1:s where s is the last non-zero function of x.
-"""
 
 Spatial modelling for data with different supports.
 
