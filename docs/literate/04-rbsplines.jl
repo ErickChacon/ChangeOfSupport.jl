@@ -41,13 +41,58 @@ ENV["GKSwstype"] = "100"
 # connect: Connection refused
 # GKS: can't connect to GKS socket application
 
-# p1 = plot(t, Bs, lw = 1, legend = false, title = "(a) B-splines");
-# plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5);
-# # savefig(p1, "plot0.pdf")
+p1 = plot(t, Bs, lw = 1, legend = false, title = "(a) B-splines");
+plot!(p1, range(boundaryknots(bs)), st = :vline, color = :gray, ls = :dash, lw = 0.5);
+savefig(p1, "plot.pdf")
 
-fig = MK.series(t, Bs', color = :Set1, axis = (title =  "(a) B-splines",));
+ggplot_theme = MK.Theme(
+    Axis = (
+        backgroundcolor = :gray90,
+        # backgroundcolor = :white,
+        leftspinevisible = false,
+        rightspinevisible = false,
+        bottomspinevisible = false,
+        topspinevisible = false,
+        xgridcolor = :white,
+        ygridcolor = :white,
+    )
+)
+
+simple_theme = MK.Theme(
+    Axis = (
+        # backgroundcolor = :gray90,
+        # # backgroundcolor = :white,
+        # leftspinevisible = false,
+        # rightspinevisible = false,
+        # bottomspinevisible = false,
+        # topspinevisible = false,
+        # xgridcolor = :white,
+        # ygridcolor = :white,
+        xgridvisible = false,
+    )
+)
+
+
+# MK.set_theme!(ggplot_theme)
+
+# fig = MK.series(t, Bs', color = :Set1, axis = (title =  "(a) B-splines",));
+fig = MK.series(t, Bs', axis = (title =  "(a) B-splines",));
 MK.vlines!(range(boundaryknots(bs)), color = :gray, linestyle = :dash, linewidth = 0.8);
 MK.save("makie.pdf", fig) #src
+
+fig = MK.Figure(resolution = (800, 500))
+MK.Axis(fig[1,1], title =  "(a) B-splines", xgridvisible = false)
+MK.vlines!(range(boundaryknots(bs)), color = :gray, linestyle = :dash, linewidth = 1);
+[MK.lines!(t, Bs[:,i]) for i = 1:size(Bs, 2)]
+MK.save("makie.pdf", fig) #src
+
+using Tables
+df = Tables.table(hcat(t, Bs))
+plt = data(df) * mapping(1 => "t", 2:8 .=> :value, color = dims(1) => renamer(2:8)) * visual(MK.Lines) +
+    data((x = range(boundaryknots(bs)),)) * mapping(:x) * visual(MK.VLines, linestyle = :dash)
+fig = draw(plt, figure = (resolution = (800, 500),))
+MK.save("makie.pdf", fig) #src
+
 
 
 # ### Evaluating the Bsplines integral from -∞ to x
@@ -86,19 +131,27 @@ scatter!(marks, Bc, xerr = step(marks) / 2, legend = false,
 vline!(range(tgrid)[1], c = :gray, lw = 0.5, ls = :dash)
 savefig(p, "plot.pdf")
 
-fig = MK.series(t, Bs')
-MK.scatter!(marks, Bc[:,1])
-MK.vlines!(range(tgrid)[1])
-MK.save("makie.pdf", fig) #src
-
-using Tables
-plt = data(Tables.table(Bs)) * mapping([:Column1, :Column2, :Columns])
-
-fig = MK.series(t, Bs')
+# fig = MK.series(t, Bs')
+fig = MK.Figure()
+MK.Axis(fig[1, 1])
 # MK.scatter!(marks, Bc[:,1])
-# MK.vlines!(range(tgrid)[1])
+for i = 1:size(Bs, 2)
+    MK.lines!(t, Bs[:, i])
+    MK.rangebars!(Bc[:,i], marks .- step(marks) / 2, marks .+ step(marks) / 2, direction = :x, label = "Basis $i",
+        whiskerwidth = 10)
+end
+MK.vlines!(range(tgrid)[1], color = :gray, linestyle = :dash, linewidth = 0.8);
+MK.axislegend()
 MK.save("makie.pdf", fig) #src
 
+# using Tables
+# plt = data(Tables.table(Bs)) * mapping([:Column1, :Column2, :Columns])
+#
+# fig = MK.series(t, Bs')
+# # MK.scatter!(marks, Bc[:,1])
+# # MK.vlines!(range(tgrid)[1])
+# MK.save("makie.pdf", fig) #src
+#
 
 
 
