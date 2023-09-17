@@ -77,6 +77,8 @@ MK.@recipe(Visualize, xpred, ypred, xobs, yobs) do scene
     )
 end
 
+MK.MakieLayout.get_plots(plot::Visualize) = plot.plots
+
 function MK.plot!(plot::Visualize)
     xpred = plot[:xpred][]
     ypred = plot[:ypred][]
@@ -93,15 +95,14 @@ function MK.plot!(plot::Visualize)
     plot
 end
 
-MK.MakieLayout.get_plots(p::Visualize) = p.plots
 
 fig = MK.Figure(resolution = (1000, 500))
-ax1 = MK.Axis(fig[1,1], title =  "(a) Ignoring the support")
+ax1 = MK.Axis(fig[1,1], title =  "(a) Ignoring the support", xgridvisible = false)
 visualize!(t, A0, tgrid, vce)
 MK.lines!(t, v, lw = 1)
-ax2 = MK.Axis(fig[1,2], title =  "(b) Considering the support")
+ax2 = MK.Axis(fig[1,2], title =  "(b) Considering the support", xgridvisible = false)
 visualize!(t, A, tgrid, vce)
-MK.lines!(t, v, lw = 1)
+MK.lines!(t, v, lw = 1, label =  "Latent process")
 MK.axislegend()
 MK.linkaxes!(ax1, ax2)
 MK.hideydecorations!(ax2, grid = false)
@@ -119,3 +120,14 @@ MK.save("makie.pdf", fig)
 # yobs
 # # real_process
 
+function bla!(ax::MK.Axis, x, y)
+    MK.lines!(ax, x, y, label = "Really?", color = :red, linestyle = :dash)
+    # return nothing
+end
+
+fig = MK.Figure()
+ax = MK.Axis(fig[1,1])
+bla!(ax, 1:10, rand(10))
+MK.scatter!(1:10, rand(10), label = "common")
+MK.axislegend()
+MK.save("makie.pdf", fig)
