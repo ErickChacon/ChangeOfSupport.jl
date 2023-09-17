@@ -60,3 +60,10 @@ end
 # visualize(bs)
 # MK.save("plop.pdf", MK.current_figure())
 
+######################################### RECIPES
+
+function MK.convert_arguments(P::Type{<:MK.Rangebars}, d::CartesianGrid{1}, x::AbstractVector)
+    marks = range(d)[1]
+    MK.convert_arguments(P, x, marks[1:end-1], marks[2:end])
+end
+
