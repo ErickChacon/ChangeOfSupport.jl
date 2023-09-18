@@ -11,7 +11,7 @@ import SuiteSparse # this is only for fixes
 import FFTW
 import Distributions: InverseGamma, Gamma, Distributions
 import Random: AbstractRNG, randn!
-import LinearAlgebra: cholesky, ldiv!, I, LinearAlgebra
+import LinearAlgebra: cholesky, ldiv!, I, LinearAlgebra, Diagonal
 include("gmrf.jl")
 export GMRF, RGMRF, CGMRF
 
@@ -20,6 +20,9 @@ export RegularBsplines, NRegularBsplines, basis, integral, boundaryknots, extend
 export startingknots, centroidknots
 
 include("mcmc.jl")
-export sample_gam, sample_gam_sparse
+export sample_gam, sample_gam_sparse, sample_gam_area
+
+function mytest end
+export mytest
 
 end
