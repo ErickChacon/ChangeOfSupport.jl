@@ -82,54 +82,17 @@ P = structure(δ_var)
 
 #' Comparison with and without ingoring the support.
 
-function plot_aux(gcenter, gknots, vc, col, p_ms, β)
-    plot(t, B * β[:, 2:end], lw = 0.12, color = :gray, label = false, alpha = 0.2)
-    plot!(t, v, lw = 1, label = "Latent process", legend = false, c = 1)
-    vline!(gknots, c = :gray, lw = 0.5,ls = :dash, legend = true, label = false)
-    scatter!(gcenter, vc[2], xerr = diff(gknots) / 2, ms = p_ms, msc = col[2], color = col[2], label = "Observed data")
-    plot!(t, B * mean(β[:, 2:end], dims = 2), lw = 2, color = col[1],
-          label = "Predicted mean", alpha = 0.9, legend = :topleft, legendfontsize = 5)
-    ylims!((-2, 8))
-end
-
-p1 = plot_aux(centroids(tgrid)[1], range(tgrid)[1], (vc, vce), (:red, :black), 3,
-              β[:, 500:3:end]);
-title!(p1, "(a) Change of support", titlefontsize = 10)
-p2 = plot_aux(centroids(tgrid)[1], range(tgrid)[1], (vc, vce), (:red, :black), 3,
-              β0[:, 500:3:end]);
-title!(p2, "(b) Classical approach", titlefontsize = 10)
-p = plot(p1, p2, layout = (1, 2), size = (500*1.5, 200*1.5));
-# p
-savefig(p, "plot.pdf")
-# savefig(p, "figures/application.png")
-
-marks = centroids(tgrid)[1]
-fig = MK.Figure(resolution = (1000, 500))
-MK.Axis(fig[1,1], title =  "(a) Ignoring the support")
 A0 = B * β0[:, 500:3:end]
-[MK.lines!(t, A0[:,i], color = (:gray, 0.1), linewidth = 0.3) for i in 1:size(A0, 2)];
-MK.lines!(t, v, lw = 1, label = "Latent process")
-MK.scatter!(centroids(tgrid)[1], vce, label = "Observed data", color = :black)
-MK.rangebars!(vce, marks .- step(marks) / 2, marks .+ step(marks) / 2,
-            direction = :x, whiskerwidth = 10, linewidth = 2, color = :black)
-MK.lines!(t, vec(B * mean(β0[:, 500:3:end], dims = 2)) , linewidth = 2, color = :red,
-    label = "Predicted mean")
-MK.vlines!(range(tgrid)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
-MK.ylims!(-2, 8)
-# MK.axislegend()
-MK.Axis(fig[1,2], title =  "(b) Considering the support")
 A = B * β[:, 500:3:end]
-# MK.series!(t, A', solid_color = (:gray, 0.1), linewidth = 0.3)
-[MK.lines!(t, A[:,i], color = (:gray, 0.1), linewidth = 0.3) for i in 1:size(A, 2)];
-MK.lines!(t, v, lw = 1, label = "Latent process")
-MK.scatter!(centroids(tgrid)[1], vce, label = "Observed data", color = :black)
-MK.rangebars!(vce, marks .- step(marks) / 2, marks .+ step(marks) / 2,
-            direction = :x, whiskerwidth = 10, linewidth = 2, color = :black)
-MK.lines!(t, vec(B * mean(β[:, 500:3:end], dims = 2)) , linewidth = 2, color = :red,
-    label = "Predicted mean")
-MK.vlines!(range(tgrid)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
-MK.ylims!(-2, 8)
+fig = MK.Figure(resolution = (1000, 500))
+ax1 = MK.Axis(fig[1,1], title =  "(a) Ignoring the support", xgridvisible = false)
+traceplot!(t, A0, tgrid, vce)
+MK.lines!(t, v, lw = 1)
+ax2 = MK.Axis(fig[1,2], title =  "(b) Considering the support", xgridvisible = false)
+traceplot!(t, A, tgrid, vce)
+MK.lines!(t, v, lw = 1, label =  "Latent process")
 MK.axislegend()
+MK.linkaxes!(ax1, ax2)
+MK.hideydecorations!(ax2, grid = false)
+MK.ylims!(-2, 8)
 MK.save("makie.pdf", fig)
-# MK.save("sim-1d-regular.pdf", fig)
-
