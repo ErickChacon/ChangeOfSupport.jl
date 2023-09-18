@@ -22,7 +22,4 @@ export startingknots, centroidknots
 include("mcmc.jl")
 export sample_gam, sample_gam_sparse, sample_gam_area
 
-function mytest end
-export mytest
-
 end
