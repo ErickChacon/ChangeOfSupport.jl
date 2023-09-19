@@ -1,6 +1,4 @@
 using Revise
-using Plots
-ENV["GKSwstype"] = "100"
 using ChangeOfSupport
 using Meshes
 using LinearAlgebra
@@ -27,12 +25,11 @@ B = basis(t, bs)
 # δ_var = RGMRF(CartesianGrid((q,)), 1, 0.01, 1)
 δ = rand(δ_var)
 
-# p = plot(δ)
-# savefig(p, "plot.pdf")
-
 #' Now, we can obtain a realization of the continuous stochastic process.
 v = B * δ
 
+# using Plots
+# ENV["GKSwstype"] = "100"
 # p = plot(t, v, lw = 1, title = " (a) Continuous process", label = "W(s)");
 # # plot!(range(centroids(bs)), δ, st = :scatter, color = :red, ms = 2, msw = 0, label = "δ-IGMRF");
 # savefig(p, "plot.pdf")
@@ -40,8 +37,7 @@ v = B * δ
 fig = MK.Figure()
 MK.Axis(fig[1,1], title = " (a) Continuous process")
 MK.lines!(t, v)
-MK.save("makie.pdf", fig)
-
+MK.save("makie.pdf", fig) #src
 
 #' ## Aggregated-level observation
 
@@ -96,3 +92,4 @@ MK.linkaxes!(ax1, ax2)
 MK.hideydecorations!(ax2, grid = false)
 MK.ylims!(-2, 8)
 MK.save("makie.pdf", fig)
+# MK.save("sim-1d-regular.pdf", fig)

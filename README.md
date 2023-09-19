@@ -28,3 +28,9 @@ Spatial modelling for data with different supports.
 ### Todo compatibility with other packages
 
 - [ ] Replace `RectilinearGrid` with the one in `Meshes.jl`.
+
+
+### PR
+
+- [X] rangebars in `Makie.jl` should allow cycle colors.
+- [ ] series in `Makie.jl` should not have labels.
