@@ -68,3 +68,11 @@ function CartesianGrid(b::RegularBsplines)
     # CartesianGrid((nknots-1,), (b.lower,), (spacing,), (b.order,))
 end
 
+# temporal solution to get the knot marks associated to the GMRF
+function knotmarks(b::RegularBsplines)
+    h = (b.upper - b.lower) / (b.df - b.order + 1)
+    out = RegularKnots(b.lower + h * b.order / 2,
+        b.upper + h * b.order / 2, b.df - b.order, b.order - 1, -1)
+    range(out)
+end
+
