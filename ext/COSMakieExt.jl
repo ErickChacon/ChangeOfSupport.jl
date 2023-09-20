@@ -14,6 +14,13 @@ function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::CartesianGrid{1}
     Makie.convert_arguments(P, x, marks[1:end-1], marks[2:end])
 end
 
+# Extension of rangebars for RectilinearGrid{1}
+
+function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::ChangeOfSupport.RectilinearGrid{1}, x::AbstractVector)
+    marks = knotset(d)[1]
+    Makie.convert_arguments(P, x, marks[1:end-1], marks[2:end])
+end
+
 # Traceplot recipe for MCMC predictions
 
 Makie.@recipe(Traceplot, xpred, ypred, xobs, yobs) do scene
@@ -34,7 +41,7 @@ function Makie.plot!(plot::Traceplot)
     # observed data
     Makie.rangebars!(plot, xobs, yobs, direction = :x, whiskerwidth = 10, linewidth = 2, color = :black);
     Makie.scatter!(plot, centroids(xobs)[1], yobs, label = "Observed data", color = :black)
-    Makie.vlines!(plot, range(xobs)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
+    Makie.vlines!(plot, knotset(xobs)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
     # predictive mean
     Makie.lines!(plot, xpred, vec(mean(ypred, dims = 2)) , linewidth = 2, color = :red, label = "Predicted mean")
     plot

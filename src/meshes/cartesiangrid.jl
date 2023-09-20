@@ -13,6 +13,14 @@ function Base.range(x::CartesianGrid{Dim}) where {Dim}
     [(lower[i]):(step[i]):(upper[i]) for i in 1:Dim]
 end
 
+function knotset(x::CartesianGrid{Dim}) where {Dim}
+    lower = coordinates(minimum(x))
+    upper = coordinates(maximum(x))
+    step = spacing(x)
+    [(lower[i]):(step[i]):(upper[i]) for i in 1:Dim]
+end
+
+
 """
     centroids(x::CartesianGrid)
 
