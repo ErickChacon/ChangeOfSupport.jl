@@ -189,11 +189,15 @@ function basis(x::RectilinearGrid{1}, b::RegularBsplines)
     diff(ibasis, dims = 1) ./ diff(gridknots)
 end
 
-# function basis(x::Segment{1}, b::RegularBsplines)
-#     # gridknots = knotset(x)[1]
-#     # ibasis = integral(gridknots, b)
-#     # diff(ibasis, dims = 1) ./ diff(gridknots)
-# end
+function basis(x::Segment{1}, b::RegularBsplines)
+    gridknots = map(x -> coordinates(x)[1], extrema(x)) |> extrema |> collect
+    ibasis = integral(gridknots, b)
+    diff(ibasis, dims = 1) ./ diff(gridknots)
+end
+
+function basis(x::GeometrySet{1, Float64, Segment{1, Float64}}, b::RegularBsplines)
+    vcat([basis(s, b) for s in x]...)
+end
 
 # function cartesiangrid(b::RegularBsplines)
 #     n_knots = b.df + b.order + 1
