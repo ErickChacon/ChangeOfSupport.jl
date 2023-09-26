@@ -18,3 +18,11 @@ function centroids(x::Meshes.RectilinearGrid{Dim,T}) where {Dim,T}
 end
 
 # Get vector of marginal centroids for each dimension of a `RectilinearGrid` object.
+
+function centroids(x::GeometrySet{1, Float64, Segment{1, Float64}})
+    (map(s -> coordinates(centroid(s))[1], x),)
+end
+
+function knotset(x::GeometrySet{1, Float64, Segment{1, Float64}})
+    (vcat(map(s -> coordinates(minimum(s))[1], x), map(s -> coordinates(maximum(s))[1], x)),)
+end

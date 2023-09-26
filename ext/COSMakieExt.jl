@@ -21,6 +21,14 @@ function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::RectilinearGrid{
     Makie.convert_arguments(P, x, marks[1:end-1], marks[2:end])
 end
 
+# Extension of rangebars for RectilinearGrid{1}
+
+function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::GeometrySet{1, Float64, Segment{1, Float64}}, x::AbstractVector)
+    marksl = map(s -> coordinates(minimum(s))[1], d)
+    marksu = map(s -> coordinates(maximum(s))[1], d)
+    Makie.convert_arguments(P, x, marksl, marksu)
+end
+
 # Traceplot recipe for MCMC predictions
 
 Makie.@recipe(Traceplot, xpred, ypred, xobs, yobs) do scene
