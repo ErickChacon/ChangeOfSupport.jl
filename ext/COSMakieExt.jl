@@ -16,7 +16,7 @@ end
 
 # Extension of rangebars for RectilinearGrid{1}
 
-function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::ChangeOfSupport.RectilinearGrid{1}, x::AbstractVector)
+function Makie.convert_arguments(P::Type{<:Makie.Rangebars}, d::RectilinearGrid{1}, x::AbstractVector)
     marks = knotset(d)[1]
     Makie.convert_arguments(P, x, marks[1:end-1], marks[2:end])
 end
