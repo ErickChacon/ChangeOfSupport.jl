@@ -4,11 +4,11 @@ using Revise
 using Meshes
 using Plots
 using ChangeOfSupport
-using Distributions
+# using Distributions
 using Statistics
 const CS = ChangeOfSupport
 
-gr(dpi = 250)
+# gr(dpi = 250)
 
 # ## GMRF
 
