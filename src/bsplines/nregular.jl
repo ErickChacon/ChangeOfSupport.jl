@@ -43,3 +43,14 @@ function basis(x::RectilinearGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
     N == 1 ? ibasis[1] : kron(reverse(ibasis)...)
 end
 
+function basis(x::Quadrangle{N}, b::NRegularBsplines{N, T}) where {N, T}
+    b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
+    segs = [Segment(Point(coordinates(extrema(x)[1])[i],), Point(coordinates(extrema(x)[2])[i],)) for i = 1:2]
+    ibasis = [basis(segs[i], b[i]) for i in 1:N]
+    N == 1 ? ibasis[1] : kron(reverse(ibasis)...)
+end
+
+function basis(x::GeometrySet{2, Float64, Quadrangle{2, Float64}}, b::NRegularBsplines{N, T}) where {N, T}
+    vcat([basis(s, b) for s in x]...)
+end
+
