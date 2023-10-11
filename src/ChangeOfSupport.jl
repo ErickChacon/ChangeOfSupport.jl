@@ -7,13 +7,14 @@ include("meshes.jl")
 export RegularKnots, adjacency, difference, structure
 export centroids, knotset, centroidsmat
 
-import SuiteSparse # this is only for fixes
-import FFTW
+# import SuiteSparse # this is only for fixes
+# import FFTW
 import Distributions: InverseGamma, Gamma, Distributions
-import Random: AbstractRNG, randn!
+# import Random: AbstractRNG, randn!
 import LinearAlgebra: cholesky, ldiv!, I, LinearAlgebra, Diagonal
-include("gmrf.jl")
-export GMRF, RGMRF, CGMRF
+# include("gmrf.jl")
+using GMRFs
+export GMRF, CGMRF
 
 include("bsplines.jl")
 export RegularBsplines, NRegularBsplines, basis, integral, boundaryknots, extendedknots
