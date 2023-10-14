@@ -33,7 +33,8 @@ end
 
 Makie.@recipe(Traceplot, xpred, ypred, xobs, yobs) do scene
     Makie.Attributes(
-        labels = nothing
+        labels = nothing,
+        addlines = true
     )
 end
 
@@ -44,12 +45,15 @@ function Makie.plot!(plot::Traceplot)
     ypred = plot[:ypred][]
     xobs = plot[:xobs][]
     yobs = plot[:yobs][]
+    addlines = plot[:addlines][]
     # predictive samples
     [Makie.lines!(plot, xpred, ypred[:,i], color = (:gray, 0.1), linewidth = 0.3) for i in 1:size(ypred, 2)];
     # observed data
-    Makie.rangebars!(plot, xobs, yobs, direction = :x, whiskerwidth = 10, linewidth = 2, color = :black);
+    Makie.rangebars!(plot, xobs, yobs, direction = :x, whiskerwidth = 10, linewidth = 2, color = :black, label = "Observed data");
     Makie.scatter!(plot, centroids(xobs)[1], yobs, label = "Observed data", color = :black)
-    Makie.vlines!(plot, knotset(xobs)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
+    if addlines
+        Makie.vlines!(plot, knotset(xobs)[1], color = :gray, linewidth = 0.5, linestyle = :dash)
+    end
     # predictive mean
     Makie.lines!(plot, xpred, vec(mean(ypred, dims = 2)) , linewidth = 2, color = :red, label = "Predicted mean")
     plot
