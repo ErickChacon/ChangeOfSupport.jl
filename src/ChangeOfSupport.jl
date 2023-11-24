@@ -2,10 +2,12 @@ module ChangeOfSupport
 
 using Meshes
 import Meshes
-import SparseArrays: sparse, sparsevec, spdiagm, spzeros
+import SparseArrays: sparse, sparsevec, spdiagm, spzeros, SparseMatrixCSC
 include("meshes.jl")
 export RegularKnots, adjacency, difference, structure
 export centroids, knotset, centroidsmat
+
+using TimerOutputs
 
 # import SuiteSparse # this is only for fixes
 # import FFTW
