@@ -8,23 +8,26 @@ end
 
 function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, id; niter = 10)
 
-    # # hyperparameters
-    # sigma2_a_prior = 0.001
-    # sigma2_b_prior = 0.001
-    # kappa_a_prior = 0.001
-    # kappa_b_prior = 0.001
-
     # dimensions
     K = length(y)
     p = length(x)
+    pf = K + p
     n = length.(y)
     m = map(x -> size(x, 1), x)
     qw = size(Bw[1], 2)
     qv = map(x -> size(x, 2), Bvx)
 
+    # # hyperparameters
+    # sigma2_a_prior = 0.001
+    # sigma2_b_prior = 0.001
+    # kappa_a_prior = 0.001
+    # kappa_b_prior = 0.001
+    Σᵦ = 3I
+
     # initialize samples
     δw_samples = zeros(qw, niter)
     δv_samples = [zeros(qv[i], niter) for i in 1:p]
+    βf_samples = zeros(pf, niter)
     σ²y_samples = zeros(K, niter)
     σ²x_samples = zeros(p, niter)
     κw_samples = zeros(1, niter)
@@ -39,9 +42,9 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     BvytBvy = [Bvy[j,k]' * Bvy[j,k] for j in 1:p, k in 1:K]
 
     # using design matrix approach
+    βf = [β₀; b; β]
     A = [myA(k, n[k], K, id) for k in 1:K]
     Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
-    βf = [β₀; b; β]
     resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
     # # mcmc
@@ -69,6 +72,16 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
             [resid[k] -= β[j] * Bvy[j, k] * δv[j] for k in 1:K]
         end
 
+        # sample β
+        Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
+        Qᵦ = sum([σ²y[k]^(-1) * Vf[k]' * Vf[k] for k in 1:K]) + Σᵦ
+        CQᵦ = cholesky(Qᵦ)
+        μᵦ = CQᵦ.U \ (CQᵦ.L \ sum([σ²y[k]^(-1) * Vf[k]' * (y[k] - Bw[k] * δw) for k in 1:K]))
+        βf = μᵦ + CQᵦ.U \ randn(pf)
+        β = βf[K+1:end]
+        βf_samples[:, i] = βf
+        resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
+
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
         # b_σ² = sigma2_b_prior + sum((y - Bw * β).^2) / 2
@@ -86,7 +99,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples, δv_samples
+    δw_samples, δv_samples, βf_samples
     # A, V, Vf
     # BvytBvy
 end
