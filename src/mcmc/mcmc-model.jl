@@ -6,7 +6,7 @@ function myA(i, n, K, id)
     A
 end
 
-function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, δw, δv, id; niter = 10)
+function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, id; niter = 10)
 
     # # hyperparameters
     # sigma2_a_prior = 0.001
@@ -55,13 +55,13 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         δw = μw + CQw.UP \ randn(qw)
         δw_samples[:, i] = δw
 
-        # # sample δv
-        # Qv = [sum(β[j]^2 ./ σ²y .* BvytBvy[:, j]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j] for j in 1:p]
-        # CQv = cholesky.(Qv)
-        # auxeff = [b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β) for k in 1:K]
-        # # aux = [auxeff +    for k in 1:K]
-        # # aux = sum([b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β) for k in 1:K])
-        # # aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - (b[k] .+ β₀ .+ sum(Bvy[:,k] .* δv .* β))) for k in 1:K])
+        # sample δv
+        Qv = [sum(β[j]^2 ./ σ²y .* BvytBvy[j, :]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j] for j in 1:p]
+        CQv = cholesky.(Qv)
+        auxv = [sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * (y[k] - (Vf[k] * βf - β[j] * Bvy[j, k] * δv[j] + Bw[k] * δw)) for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j]) for j in 1:p]
+        μv = [CQv[j].UP \ (CQv[j].PtL \ auxv[j]) for j in 1:p]
+        δv = [μv[j] + CQv[j].UP \ randn(qv[j]) for j in 1:p]
+        [δv_samples[j][:, i] = δv[j] for j in 1:p]
 
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
@@ -80,7 +80,8 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples
+    δw_samples, δv_samples
     # A, V, Vf
+    # BvytBvy
 end
 
