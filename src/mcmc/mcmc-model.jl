@@ -1,4 +1,12 @@
-function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, δw, δv; niter = 10)
+function myA(i, n, K, id)
+    A = [ones(n) zeros(n, K-1)]
+    if i != id
+        A[:, 1+i-(i>id)] .= 1
+    end
+    A
+end
+
+function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, δw, δv, id; niter = 10)
 
     # # hyperparameters
     # sigma2_a_prior = 0.001
@@ -30,15 +38,30 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     BvxtBvx = [Bvx[j]' * Bvx[j] for j in 1:p]
     BvytBvy = [Bvy[j,k]' * Bvy[j,k] for j in 1:p, k in 1:K]
 
+    # using design matrix approach
+    A = [myA(k, n[k], K, id) for k in 1:K]
+    V = [stack(Bvy[:, k] .* δv) for k in 1:K]
+    Vf = [[A[k] V[k]] for k in 1:K]
+    βf = [β₀; b; β]
+
     # # mcmc
     for i = 2:niter
         # sample δw
         Qw = sum(BwtBw ./ σ²y) + κw * Pw
         CQw = cholesky(Qw)
-        aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - (b[k] .+ β₀ .+ sum(Bvy[:,k] .* δv .* β))) for k in 1:K])
+        aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - Vf[k] * βf) for k in 1:K])
+        # aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - (b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β))) for k in 1:K])
         μw =  CQw.UP \ (CQw.PtL \ aux)
         δw = μw + CQw.UP \ randn(qw)
         δw_samples[:, i] = δw
+
+        # # sample δv
+        # Qv = [sum(β[j]^2 ./ σ²y .* BvytBvy[:, j]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j] for j in 1:p]
+        # CQv = cholesky.(Qv)
+        # auxeff = [b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β) for k in 1:K]
+        # # aux = [auxeff +    for k in 1:K]
+        # # aux = sum([b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β) for k in 1:K])
+        # # aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - (b[k] .+ β₀ .+ sum(Bvy[:,k] .* δv .* β))) for k in 1:K])
 
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
@@ -58,4 +81,6 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     # δw_samples, σ²_samples, κ_samples
     # out
     δw_samples
+    # A, V, Vf
 end
+
