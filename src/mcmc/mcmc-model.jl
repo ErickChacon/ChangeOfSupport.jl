@@ -40,29 +40,33 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # using design matrix approach
     A = [myA(k, n[k], K, id) for k in 1:K]
-    V = [stack(Bvy[:, k] .* δv) for k in 1:K]
-    Vf = [[A[k] V[k]] for k in 1:K]
+    Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
     βf = [β₀; b; β]
+    resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
     # # mcmc
     for i = 2:niter
+
         # sample δw
         Qw = sum(BwtBw ./ σ²y) + κw * Pw
         CQw = cholesky(Qw)
-        aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - Vf[k] * βf) for k in 1:K])
-        # aux = sum([σ²y[k]^(-1) * Bw[k]' * (y[k] - (b[k] + β₀ .+ sum(Bvy[:,k] .* δv .* β))) for k in 1:K])
+        [resid[k] += Bw[k] * δw for k in 1:K]
+        aux = sum([σ²y[k]^(-1) * Bw[k]' * resid[k] for k in 1:K])
         μw =  CQw.UP \ (CQw.PtL \ aux)
         δw = μw + CQw.UP \ randn(qw)
         δw_samples[:, i] = δw
+        [resid[k] -= Bw[k] * δw for k in 1:K]
 
         # sample δv
         for j = 1:p
             Qv = sum(β[j]^2 ./ σ²y .* BvytBvy[j, :]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j]
             CQv = cholesky(Qv)
-            auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * (y[k] - (Vf[k] * βf - β[j] * Bvy[j, k] * δv[j] + Bw[k] * δw)) for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j])
+            [resid[k] += β[j] * Bvy[j, k] * δv[j] for k in 1:K]
+            auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * resid[k] for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j])
             μv = CQv.UP \ (CQv.PtL \ auxv)
             δv[j] = μv + CQv.UP \ randn(qv[j])
             δv_samples[j][:, i] = δv[j]
+            [resid[k] -= β[j] * Bvy[j, k] * δv[j] for k in 1:K]
         end
 
         # # sample σ²
