@@ -56,12 +56,14 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         δw_samples[:, i] = δw
 
         # sample δv
-        Qv = [sum(β[j]^2 ./ σ²y .* BvytBvy[j, :]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j] for j in 1:p]
-        CQv = cholesky.(Qv)
-        auxv = [sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * (y[k] - (Vf[k] * βf - β[j] * Bvy[j, k] * δv[j] + Bw[k] * δw)) for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j]) for j in 1:p]
-        μv = [CQv[j].UP \ (CQv[j].PtL \ auxv[j]) for j in 1:p]
-        δv = [μv[j] + CQv[j].UP \ randn(qv[j]) for j in 1:p]
-        [δv_samples[j][:, i] = δv[j] for j in 1:p]
+        for j = 1:p
+            Qv = sum(β[j]^2 ./ σ²y .* BvytBvy[j, :]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j]
+            CQv = cholesky(Qv)
+            auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * (y[k] - (Vf[k] * βf - β[j] * Bvy[j, k] * δv[j] + Bw[k] * δw)) for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j])
+            μv = CQv.UP \ (CQv.PtL \ auxv)
+            δv[j] = μv + CQv.UP \ randn(qv[j])
+            δv_samples[j][:, i] = δv[j]
+        end
 
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
