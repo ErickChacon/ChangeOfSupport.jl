@@ -113,10 +113,6 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         κv_samples[:, i] = κv
     end
 
-    # δw_samples, σ²_samples, κ_samples
-    # out
     δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples, κv_samples
-    # A, V, Vf
-    # BvytBvy
 end
 
