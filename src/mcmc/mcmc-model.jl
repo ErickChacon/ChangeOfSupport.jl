@@ -8,6 +8,8 @@ end
 
 function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, id; niter = 10)
 
+    α = copy(α)
+
     # dimensions
     K = length(y)
     p = length(x)
@@ -23,11 +25,13 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     # kappa_a_prior = 0.001
     # kappa_b_prior = 0.001
     Σᵦ = 3I
+    σ²α = repeat([1], p)
 
     # initialize samples
     δw_samples = zeros(qw, niter)
     δv_samples = [zeros(qv[i], niter) for i in 1:p]
     βf_samples = zeros(pf, niter)
+    α_samples = zeros(p, niter)
     σ²y_samples = zeros(K, niter)
     σ²x_samples = zeros(p, niter)
     κw_samples = zeros(1, niter)
@@ -82,6 +86,14 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         βf_samples[:, i] = βf
         resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
+        # sample α
+        for j = 1:p
+            Qα = σ²x[j]^(-1) * m[j] + σ²α[j]
+            μsα = (σ²x[j]^(-1) * sum(x[j] - Bvx[j]*δv[j]))
+            α[j] = Qα^(-1) * (μsα + randn())
+            α_samples[j, i] = α[j]
+        end
+
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
         # b_σ² = sigma2_b_prior + sum((y - Bw * β).^2) / 2
@@ -99,7 +111,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples, δv_samples, βf_samples
+    δw_samples, δv_samples, βf_samples, α_samples
     # A, V, Vf
     # BvytBvy
 end
