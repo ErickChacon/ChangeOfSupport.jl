@@ -22,8 +22,8 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     # # hyperparameters
     sigma2_a_prior = 0.001
     sigma2_b_prior = 0.001
-    # kappa_a_prior = 0.001
-    # kappa_b_prior = 0.001
+    kappa_a_prior = 0.001
+    kappa_b_prior = 0.001
     Σᵦ = 3I
     σ²α = repeat([1], p)
 
@@ -106,24 +106,16 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         σ²x = rand.(InverseGamma.(a_σ²x, b_σ²x))
         σ²x_samples[:, i] = σ²x
 
-        # # sample σ²
-        # a_σ² = sigma2_a_prior + ny / 2
-        # b_σ² = sigma2_b_prior + sum((y - Bw * β).^2) / 2
-        # σ² = rand(InverseGamma(a_σ², b_σ²))
-        # σ²_samples[1, i] = σ²
-        #
-        # if !fix_hyper
-        #     # sample κ
-        #     a_κ = kappa_a_prior + (p - 1) / 2
-        #     b_κ = kappa_b_prior + transpose(β) * P * β / 2
-        #     κ = rand(Gamma(a_κ, 1 / b_κ))
-        # end
-        # κ_samples[1, i] = κ
+        # sample κv
+        a_κ = kappa_a_prior .+ qv / 2
+        b_κ = kappa_b_prior .+ (transpose.(δv) .* Pv .* δv) ./ 2
+        κv = rand.(Gamma.(a_κ, 1 ./ b_κ))
+        κv_samples[:, i] = κv
     end
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples
+    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples, κv_samples
     # A, V, Vf
     # BvytBvy
 end
