@@ -100,6 +100,12 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         σ²y = rand.(InverseGamma.(a_σ²y, b_σ²y))
         σ²y_samples[:, i] = σ²y
 
+        # sample σ²x
+        a_σ²x = sigma2_a_prior .+ m / 2
+        b_σ²x = [sigma2_b_prior + sum((x[j] - Bvx[j]*δv[j] .- α[j]).^2) / 2 for j in 1:p]
+        σ²x = rand.(InverseGamma.(a_σ²x, b_σ²x))
+        σ²x_samples[:, i] = σ²x
+
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
         # b_σ² = sigma2_b_prior + sum((y - Bw * β).^2) / 2
@@ -117,7 +123,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples
+    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples
     # A, V, Vf
     # BvytBvy
 end
