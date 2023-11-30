@@ -20,8 +20,8 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     qv = map(x -> size(x, 2), Bvx)
 
     # # hyperparameters
-    # sigma2_a_prior = 0.001
-    # sigma2_b_prior = 0.001
+    sigma2_a_prior = 0.001
+    sigma2_b_prior = 0.001
     # kappa_a_prior = 0.001
     # kappa_b_prior = 0.001
     Σᵦ = 3I
@@ -94,6 +94,12 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
             α_samples[j, i] = α[j]
         end
 
+        # sample σ²y
+        a_σ²y = sigma2_a_prior .+ n / 2
+        b_σ²y = [sigma2_b_prior + sum(resid[k].^2) / 2 for k in 1:K]
+        σ²y = rand.(InverseGamma.(a_σ²y, b_σ²y))
+        σ²y_samples[:, i] = σ²y
+
         # # sample σ²
         # a_σ² = sigma2_a_prior + ny / 2
         # b_σ² = sigma2_b_prior + sum((y - Bw * β).^2) / 2
@@ -111,7 +117,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # δw_samples, σ²_samples, κ_samples
     # out
-    δw_samples, δv_samples, βf_samples, α_samples
+    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples
     # A, V, Vf
     # BvytBvy
 end
