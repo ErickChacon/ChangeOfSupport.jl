@@ -8,13 +8,14 @@ end
 
 function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, id; niter = 10)
 
+    z = y
     α = copy(α)
 
     # dimensions
-    K = length(y)
+    K = length(z)
     p = length(x)
     pf = K + p
-    n = length.(y)
+    n = length.(z)
     m = map(x -> size(x, 1), x)
     qw = size(Bw[1], 2)
     qv = map(x -> size(x, 2), Bvx)
@@ -49,7 +50,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     βf = [β₀; b; β]
     A = [myA(k, n[k], K, id) for k in 1:K]
     Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
-    resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
+    resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
     # # mcmc
     for i = 2:niter
@@ -80,11 +81,11 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
         Qᵦ = sum([σ²y[k]^(-1) * Vf[k]' * Vf[k] for k in 1:K]) + Σᵦ
         CQᵦ = cholesky(Qᵦ)
-        μᵦ = CQᵦ.U \ (CQᵦ.L \ sum([σ²y[k]^(-1) * Vf[k]' * (y[k] - Bw[k] * δw) for k in 1:K]))
+        μᵦ = CQᵦ.U \ (CQᵦ.L \ sum([σ²y[k]^(-1) * Vf[k]' * (z[k] - Bw[k] * δw) for k in 1:K]))
         βf = μᵦ + CQᵦ.U \ randn(pf)
         β = βf[K+1:end]
         βf_samples[:, i] = βf
-        resid = [y[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
+        resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
         # sample α
         for j = 1:p
