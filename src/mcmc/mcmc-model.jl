@@ -6,10 +6,10 @@ function myA(i, n, K, id)
     A
 end
 
-function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, id; σ²y, σ²x, κw, κv, β, b, α, δw, δv, niter = 10)
+function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βinit = nothing, αinit = nothing,
+    σ²yinit = nothing, σ²xinit = nothing, κvinit = nothing, δwinit = nothing, δvinit = nothing, niter = 10)
 
     z = y
-    α = copy(α)
 
     # dimensions
     K = length(y)
@@ -46,10 +46,14 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, id; σ²y, σ²x, κw, κv, β
     # κ_samples[1, 1] = κ
 
     # initial values
-    b = zeros(K)
-    β = zeros(p)
-    δw = zeros(qw)
-    δv = [zeros(qv[k]) for k in 1:K]
+    b = isnothing(binit) ? zeros(K) : binit
+    β = isnothing(βinit) ? zeros(p) : βinit
+    α = isnothing(αinit) ? zeros(p) : αinit
+    σ²y = isnothing(σ²yinit) ? ones(K) : σ²yinit
+    σ²x = isnothing(σ²xinit) ? ones(p) : σ²xinit
+    κv = isnothing(κvinit) ? ones(p) : κvinit
+    δw = isnothing(δwinit) ? zeros(qw) : δwinit
+    δv = isnothing(δvinit) ? [zeros(qv[k]) for k in 1:K] : δvinit
 
     # pre-computation
     BwtBw = [Bw[k]' * Bw[k] for k in 1:K]
