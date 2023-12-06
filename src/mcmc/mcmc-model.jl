@@ -1,21 +1,21 @@
 function myA(i, n, K, id)
-    A = [ones(n) zeros(n, K-1)]
+    A = [zeros(n, K-1) ones(n)]
     if i != id
-        A[:, 1+i-(i>id)] .= 1
+        A[:, i-(i>id)] .= 1
     end
     A
 end
 
-function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, id; niter = 10)
+function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, id; σ²y, σ²x, κw, κv, β₀, β, b, α, δw, δv, niter = 10)
 
     z = y
     α = copy(α)
 
     # dimensions
-    K = length(z)
+    K = length(y)
     p = length(x)
     pf = K + p
-    n = length.(z)
+    n = length.(y)
     m = map(x -> size(x, 1), x)
     qw = size(Bw[1], 2)
     qv = map(x -> size(x, 2), Bvx)
@@ -44,6 +44,13 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # σ²_samples[1, 1] = σ²
     # κ_samples[1, 1] = κ
+    
+    # initial values
+    β₀ = 0.0
+    b = zeros(1)
+    β = zeros(p)
+    δw = zeros(qw)
+    δv = [zeros(qv[k]) for k in 1:K]
 
     # pre-computation
     BwtBw = [Bw[k]' * Bw[k] for k in 1:K]
@@ -51,7 +58,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     BvytBvy = [Bvy[j,k]' * Bvy[j,k] for j in 1:p, k in 1:K]
 
     # using design matrix approach
-    βf = [β₀; b; β]
+    βf = [b; β₀; β]
     A = [myA(k, n[k], K, id) for k in 1:K]
     Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
     resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
