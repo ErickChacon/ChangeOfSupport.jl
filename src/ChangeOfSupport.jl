@@ -11,7 +11,7 @@ using TimerOutputs
 
 # import SuiteSparse # this is only for fixes
 # import FFTW
-import Distributions: InverseGamma, Gamma, Distributions
+import Distributions: InverseGamma, Gamma, Distributions, truncated, Normal
 # import Random: AbstractRNG, randn!
 import LinearAlgebra: cholesky, ldiv!, I, LinearAlgebra, Diagonal
 # include("gmrf.jl")

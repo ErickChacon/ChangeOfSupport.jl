@@ -20,6 +20,9 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     qw = size(Bw[1], 2)
     qv = map(x -> size(x, 2), Bvx)
 
+    zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
+    zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
+
     # # hyperparameters
     sigma2_a_prior = 0.001
     sigma2_b_prior = 0.001
@@ -31,6 +34,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     # initialize samples
     δw_samples = zeros(qw, niter)
     δv_samples = [zeros(qv[i], niter) for i in 1:p]
+    z_samples = [zeros(n[k], niter) for k in 1:K]
     βf_samples = zeros(pf, niter)
     α_samples = zeros(p, niter)
     σ²y_samples = zeros(K, niter)
@@ -54,6 +58,16 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
 
     # # mcmc
     for i = 2:niter
+        # sample z
+        [resid[k] -= z[k] for k in 1:K]
+        μz = [Vf[k] * βf + Bw[k] * δw for k in 1:K]
+        varz = σ²y
+        Z = [truncated.(Normal.(μz[k], sqrt.(varz[k])), zlower[k], zupper[k]) for k in 1:K]
+        z  = [rand.(Z[k]) for k in 1:K]
+        for k = 1:K
+            z_samples[k][:, i] = z[k]
+        end
+        [resid[k] += z[k] for k in 1:K]
 
         # sample δw
         Qw = sum(BwtBw ./ σ²y) + κw * Pw
@@ -114,6 +128,6 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
         κv_samples[:, i] = κv
     end
 
-    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples, κv_samples
+    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples, κv_samples, z_samples
 end
 
