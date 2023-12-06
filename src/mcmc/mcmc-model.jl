@@ -9,8 +9,6 @@ end
 function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βinit = nothing, αinit = nothing,
     σ²yinit = nothing, σ²xinit = nothing, κvinit = nothing, δwinit = nothing, δvinit = nothing, niter = 10)
 
-    z = y
-
     # dimensions
     K = length(y)
     p = length(x)
@@ -20,40 +18,24 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
     qw = size(Bw[1], 2)
     qv = map(x -> size(x, 2), Bvx)
 
-    zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
-    zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
-
-    # # hyperparameters
+    # hyperparameters
     sigma2_a_prior = 0.001
     sigma2_b_prior = 0.001
     kappa_a_prior = 0.001
     kappa_b_prior = 0.001
     Σᵦ = 3I
-    σ²α = repeat([1], p)
-
-    # initialize samples
-    δw_samples = zeros(qw, niter)
-    δv_samples = [zeros(qv[i], niter) for i in 1:p]
-    z_samples = [zeros(n[k], niter) for k in 1:K]
-    βf_samples = zeros(pf, niter)
-    α_samples = zeros(p, niter)
-    σ²y_samples = zeros(K, niter)
-    σ²x_samples = zeros(p, niter)
-    κw_samples = zeros(1, niter)
-    κv_samples = zeros(p, niter)
-
-    # σ²_samples[1, 1] = σ²
-    # κ_samples[1, 1] = κ
+    σ²α = repeat([3], p)
 
     # initial values
-    b = isnothing(binit) ? zeros(K) : binit
-    β = isnothing(βinit) ? zeros(p) : βinit
-    α = isnothing(αinit) ? zeros(p) : αinit
-    σ²y = isnothing(σ²yinit) ? ones(K) : σ²yinit
-    σ²x = isnothing(σ²xinit) ? ones(p) : σ²xinit
-    κv = isnothing(κvinit) ? ones(p) : κvinit
-    δw = isnothing(δwinit) ? zeros(qw) : δwinit
-    δv = isnothing(δvinit) ? [zeros(qv[k]) for k in 1:K] : δvinit
+    z = [zeros(n[k]) for k in 1:K]
+    b = isnothing(binit) ? zeros(K) : copy(binit)
+    β = isnothing(βinit) ? zeros(p) : copy(βinit)
+    α = isnothing(αinit) ? zeros(p) : copy(αinit)
+    σ²y = isnothing(σ²yinit) ? ones(K) : copy(σ²yinit)
+    σ²x = isnothing(σ²xinit) ? ones(p) : copy(σ²xinit)
+    κv = isnothing(κvinit) ? ones(p) : copy(κvinit)
+    δw = isnothing(δwinit) ? zeros(qw) : copy(δwinit)
+    δv = isnothing(δvinit) ? [zeros(qv[j]) for j in 1:p] : copy(δvinit)
 
     # pre-computation
     BwtBw = [Bw[k]' * Bw[k] for k in 1:K]
@@ -66,7 +48,31 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
     Vf = [[A[k] stack(Bvy[:, k] .* δv)] for k in 1:K]
     resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
-    # # mcmc
+    # truncated limits
+    zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
+    zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
+
+    # initialize samples
+    δw_samples = zeros(qw, niter)
+    δv_samples = [zeros(qv[i], niter) for i in 1:p]
+    z_samples = [zeros(n[k], niter) for k in 1:K]
+    βf_samples = zeros(pf, niter)
+    α_samples = zeros(p, niter)
+    σ²y_samples = zeros(K, niter)
+    σ²x_samples = zeros(p, niter)
+    κw_samples = zeros(1, niter)
+    κv_samples = zeros(p, niter)
+
+    δw_samples[:, 1] = δw
+    [δv_samples[j][:, 1] = δv[j] for j in 1:p]
+    [z_samples[k][:, 1] = z[k] for k in 1:K]
+    βf_samples[:, 1] = βf
+    α_samples[:, 1] = α
+    σ²y_samples[:, 1] = σ²y
+    σ²x_samples[:, 1] = σ²x
+    κv_samples[:, 1] = κv
+
+    # mcmc
     for i = 2:niter
         # sample z
         [resid[k] -= z[k] for k in 1:K]
