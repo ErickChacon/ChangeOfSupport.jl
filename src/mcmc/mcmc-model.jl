@@ -60,7 +60,7 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, σ²y, σ²x, κw, κv, β₀,
     for i = 2:niter
         # sample z
         [resid[k] -= z[k] for k in 1:K]
-        μz = [Vf[k] * βf + Bw[k] * δw for k in 1:K]
+        μz = [-resid[k] for k in 1:K]
         varz = σ²y
         Z = [truncated.(Normal.(μz[k], sqrt.(varz[k])), zlower[k], zupper[k]) for k in 1:K]
         z  = [rand.(Z[k]) for k in 1:K]
