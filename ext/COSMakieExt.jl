@@ -38,7 +38,7 @@ Makie.@recipe(Traceplot, xpred, ypred, xobs, yobs) do scene
     )
 end
 
-Makie.MakieLayout.get_plots(plot::Traceplot) = plot.plots
+# Makie.MakieLayout.get_plots(plot::Traceplot) = plot.plots
 
 function Makie.plot!(plot::Traceplot)
     xpred = plot[:xpred][]
