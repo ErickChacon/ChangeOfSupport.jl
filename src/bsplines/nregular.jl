@@ -1,3 +1,9 @@
+"""
+    NRegularBsplines(lower, upper, df, order)
+
+N-dimensional tensor product basis splines of specified `order` with `df` degrees of
+freedom, using regular knots with `lower` and `upper` bounds.
+"""
 struct NRegularBsplines{N,T}
     lower::NTuple{N,T}
     upper::NTuple{N,T}
@@ -8,10 +14,12 @@ end
 function NRegularBsplines(grid::CartesianGrid{N, T}, order::Int) where {N, T}
     lower = Tuple(x for x in coordinates(minimum(grid)))
     upper = Tuple(x for x in coordinates(maximum(grid)))
-
     NRegularBsplines(lower, upper, size(grid), order)
 end
 
+# ----------------------------------------------
+# Sparse evaluation of NRegularBsplines.
+# ----------------------------------------------
 
 function basis(x::NTuple{N, T}, b::NRegularBsplines{N, T}) where {N, T}
     b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
@@ -26,6 +34,15 @@ function basis(x::Array{T, N}, b::NRegularBsplines{N, T}) where {N, T}
     bb = [basis(x[:, i], b[i]) for i in N:-1:1]
     @time N == 1 ? bb[1] : kron.(eachrow.(bb)...) |> x -> Matrix(transpose(reduce(hcat, x)))
 end
+
+# this need to be faster
+function basis2(x::Array{T, N}, b::NRegularBsplines{N, T}) where {N, T}
+    B = zeros(size(x)[1], prod(b.df))
+    b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
+    bb = [basis(x[:, i], b[i]) for i in N:-1:1]
+    # @time N == 1 ? bb[1] : kron.(eachrow.(bb)...) |> x -> Matrix(transpose(reduce(hcat, x)))
+end
+
 
 function basis(x::CartesianGrid{N}, b::NRegularBsplines{N, T}) where {N, T}
     b = [RegularBsplines(b.lower[i], b.upper[i], b.df[i], b.order) for i in 1:N]
