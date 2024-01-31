@@ -94,6 +94,6 @@ function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing
         end
     end
 
-    δw_samples, b_samples, σ²y_samples, z_samples
+    Dict("w" => δw_samples, "beta" => b_samples, "sigma2_y" => σ²y_samples, "z" => z_samples)
 end
 
