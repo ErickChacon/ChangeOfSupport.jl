@@ -1,4 +1,5 @@
-function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing, δwinit = nothing, nsamples = 10, thin = 1, thinz = 1)
+function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing, δwinit = nothing,
+    nsamples = 10, burnin = 0, thin = 1, thinz = 1)
 
     # dimensions
     K = length(y)
@@ -29,13 +30,14 @@ function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing
     zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
     zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
 
-    niter = (nsamples - 1) * thin + 1
-    nsamplesz = length(1:thinz:niter)
+    niter = mcmcnsave(nsamples, burnin, thin)
+    nsamplesz = mcmcnsamples(niter, burnin, thin)
+
     # initialize samples
-    δw_samples = zeros(qw, nsamples)
-    z_samples = [zeros(n[k], nsamplesz) for k in 1:K]
-    b_samples = zeros(K, nsamples)
-    σ²y_samples = zeros(K, nsamples)
+    δw_samples = zeros(qw, nsamples + 1)
+    z_samples = [zeros(n[k], nsamplesz + 1) for k in 1:K]
+    b_samples = zeros(K, nsamples + 1)
+    σ²y_samples = zeros(K, nsamples + 1)
 
     δw_samples[:, 1] = δw
     [z_samples[k][:, 1] = z[k] for k in 1:K]
@@ -43,12 +45,13 @@ function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing
     σ²y_samples[:, 1] = σ²y
 
     # mcmc
-    for i = 2:niter
-        saveiterz = (i-1) % thinz == 0
-        saveidz = div(i-1, thinz) + 1
+    for i = 1:niter
 
-        saveiter = (i-1) % thin == 0
-        saveid = div(i-1, thin) + 1
+        # check if iteration should be saved
+        saveiter = mcmcsave(i, burnin, thin)
+        saveid = mcmcid(i, burnin, thin) + 1
+        saveiterz = mcmcsave(i, burnin, thinz)
+        saveidz = mcmcid(i, burnin, thinz) + 1
 
         # sample z
         [resid[k] -= z[k] for k in 1:K]
