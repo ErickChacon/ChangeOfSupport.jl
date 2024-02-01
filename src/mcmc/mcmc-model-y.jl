@@ -30,8 +30,8 @@ function sample_model_y(y, Bw, Pw, κw, id; binit = nothing, σ²yinit = nothing
     zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
     zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
 
-    niter = mcmcnsave(nsamples, burnin, thin)
-    nsamplesz = mcmcnsamples(niter, burnin, thin)
+    niter = mcmcniter(nsamples, burnin, thin)
+    nsamplesz = mcmcnsamples(niter, burnin, thinz)
 
     # initialize samples
     δw_samples = zeros(qw, nsamples + 1)
