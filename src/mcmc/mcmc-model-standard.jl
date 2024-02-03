@@ -1,4 +1,4 @@
-function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βinit = nothing, αinit = nothing,
+function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βinit = nothing,
     σ²yinit = nothing, σ²xinit = nothing, κvinit = nothing, δwinit = nothing, δvinit = nothing, niter = 10)
 
     # dimensions
@@ -16,13 +16,11 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
     kappa_a_prior = 0.001
     kappa_b_prior = 0.001
     Σᵦ = 3I
-    σ²α = repeat([3], p)
 
     # initial values
     z = [zeros(n[k]) for k in 1:K]
     b = isnothing(binit) ? zeros(K) : copy(binit)
     β = isnothing(βinit) ? zeros(p) : copy(βinit)
-    α = isnothing(αinit) ? zeros(p) : copy(αinit)
     σ²y = isnothing(σ²yinit) ? ones(K) : copy(σ²yinit)
     σ²x = isnothing(σ²xinit) ? ones(p) : copy(σ²xinit)
     κv = isnothing(κvinit) ? ones(p) : copy(κvinit)
@@ -59,7 +57,6 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
     [δv_samples[j][:, 1] = δv[j] for j in 1:p]
     [z_samples[k][:, 1] = z[k] for k in 1:K]
     βf_samples[:, 1] = βf
-    α_samples[:, 1] = α
     σ²y_samples[:, 1] = σ²y
     σ²x_samples[:, 1] = σ²x
     κv_samples[:, 1] = κv
@@ -92,7 +89,7 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
             Qv = sum(β[j]^2 ./ σ²y .* BvytBvy[j, :]) + BvxtBvx[j] / σ²x[j] + κv[j]*Pv[j]
             CQv = cholesky(Qv)
             [resid[k] += β[j] * Bvy[j, k] * δv[j] for k in 1:K]
-            auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * resid[k] for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j])
+            auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * resid[k] for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j])
             μv = CQv.UP \ (CQv.PtL \ auxv)
             δv[j] = μv + CQv.UP \ randn(qv[j])
             δv_samples[j][:, i] = δv[j]
@@ -109,14 +106,6 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
         βf_samples[:, i] = βf
         resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
-        # sample α
-        for j = 1:p
-            Qα = σ²x[j]^(-1) * m[j] + σ²α[j]
-            μsα = (σ²x[j]^(-1) * sum(x[j] - Bvx[j]*δv[j]))
-            α[j] = Qα^(-1) * (μsα + randn())
-            α_samples[j, i] = α[j]
-        end
-
         # sample σ²y
         a_σ²y = sigma2_a_prior .+ n / 2
         b_σ²y = [sigma2_b_prior + sum(resid[k].^2) / 2 for k in 1:K]
@@ -125,7 +114,7 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
 
         # sample σ²x
         a_σ²x = sigma2_a_prior .+ m / 2
-        b_σ²x = [sigma2_b_prior + sum((x[j] - Bvx[j]*δv[j] .- α[j]).^2) / 2 for j in 1:p]
+        b_σ²x = [sigma2_b_prior + sum((x[j] - Bvx[j]*δv[j]).^2) / 2 for j in 1:p]
         σ²x = rand.(InverseGamma.(a_σ²x, b_σ²x))
         σ²x_samples[:, i] = σ²x
 
