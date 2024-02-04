@@ -151,7 +151,7 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
         end
     end
 
-    Dict("w" => δw_samples, "w" => δv_samples, "beta" => βf_samples,
+    Dict("w" => δw_samples, "v" => δv_samples, "beta" => βf_samples,
         "sigma2_y" => σ²y_samples, "sigma2_x" => σ²x_samples, "kappav" => κv_samples, "z" => z_samples)
 end
 
