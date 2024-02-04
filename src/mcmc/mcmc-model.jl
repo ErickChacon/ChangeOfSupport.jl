@@ -1,13 +1,6 @@
-function myA(i, n, K, id)
-    A = [ones(n) zeros(n, K-1)]
-    if i != id
-        A[:, 1+i-(i>id)] .= 1
-    end
-    A
-end
-
 function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βinit = nothing, αinit = nothing,
-    σ²yinit = nothing, σ²xinit = nothing, κvinit = nothing, δwinit = nothing, δvinit = nothing, niter = 10)
+    σ²yinit = nothing, σ²xinit = nothing, κvinit = nothing, δwinit = nothing, δvinit = nothing,
+    nsamples = 10, burnin = 0, thin = 1, thinz = 1)
 
     # dimensions
     K = length(y)
@@ -52,16 +45,20 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
     zlower = [ifelse.(y[k] .== 0, nothing, 0) for k in 1:K]
     zupper = [ifelse.(y[k] .== 1, nothing, 0) for k in 1:K]
 
+    # number of iterations
+    niter = mcmcniter(nsamples, burnin, thin)
+    nsamplesz = mcmcnsamples(niter, burnin, thinz)
+
     # initialize samples
-    δw_samples = zeros(qw, niter)
-    δv_samples = [zeros(qv[i], niter) for i in 1:p]
-    z_samples = [zeros(n[k], niter) for k in 1:K]
-    βf_samples = zeros(pf, niter)
-    α_samples = zeros(p, niter)
-    σ²y_samples = zeros(K, niter)
-    σ²x_samples = zeros(p, niter)
-    κw_samples = zeros(1, niter)
-    κv_samples = zeros(p, niter)
+    δw_samples = zeros(qw, nsamples + 1)
+    δv_samples = [zeros(qv[i], nsamples + 1) for i in 1:p]
+    z_samples = [zeros(n[k], nsamples + 1) for k in 1:K]
+    βf_samples = zeros(pf, nsamples + 1)
+    α_samples = zeros(p, nsamples + 1)
+    σ²y_samples = zeros(K, nsamples + 1)
+    σ²x_samples = zeros(p, nsamples + 1)
+    κw_samples = zeros(1, nsamples + 1)
+    κv_samples = zeros(p, nsamples + 1)
 
     δw_samples[:, 1] = δw
     [δv_samples[j][:, 1] = δv[j] for j in 1:p]
@@ -73,15 +70,24 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
     κv_samples[:, 1] = κv
 
     # mcmc
-    for i = 2:niter
+    for i = 1:niter
+
+        # check if iteration should be saved
+        saveiter = mcmcsave(i, burnin, thin)
+        saveid = mcmcid(i, burnin, thin) + 1
+        saveiterz = mcmcsave(i, burnin, thinz)
+        saveidz = mcmcid(i, burnin, thinz) + 1
+
         # sample z
         [resid[k] -= z[k] for k in 1:K]
         μz = [-resid[k] for k in 1:K]
         varz = σ²y
         Z = [truncated.(Normal.(μz[k], sqrt.(varz[k])), zlower[k], zupper[k]) for k in 1:K]
         z  = [rand.(Z[k]) for k in 1:K]
-        for k = 1:K
-            z_samples[k][:, i] = z[k]
+        if saveiterz
+            for k = 1:K
+                z_samples[k][:, saveidz] = z[k]
+            end
         end
         [resid[k] += z[k] for k in 1:K]
 
@@ -92,7 +98,9 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
         aux = sum([σ²y[k]^(-1) * Bw[k]' * resid[k] for k in 1:K])
         μw =  CQw.UP \ (CQw.PtL \ aux)
         δw = μw + CQw.UP \ randn(qw)
-        δw_samples[:, i] = δw
+        if saveiter
+            δw_samples[:, saveid] = δw
+        end
         [resid[k] -= Bw[k] * δw for k in 1:K]
 
         # sample δv
@@ -103,7 +111,9 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
             auxv = sum([σ²y[k]^(-1) * β[j] * Bvy[j,k]' * resid[k] for k in 1:K]) + σ²x[j]^(-1) * Bvx[j]' * (x[j] .- α[j])
             μv = CQv.UP \ (CQv.PtL \ auxv)
             δv[j] = μv + CQv.UP \ randn(qv[j])
-            δv_samples[j][:, i] = δv[j]
+            if saveiter
+                δv_samples[j][:, saveid] = δv[j]
+            end
             [resid[k] -= β[j] * Bvy[j, k] * δv[j] for k in 1:K]
         end
 
@@ -114,7 +124,9 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
         μᵦ = CQᵦ.U \ (CQᵦ.L \ sum([σ²y[k]^(-1) * Vf[k]' * (z[k] - Bw[k] * δw) for k in 1:K]))
         βf = μᵦ + CQᵦ.U \ randn(pf)
         β = βf[K+1:end]
-        βf_samples[:, i] = βf
+        if saveiter
+            βf_samples[:, saveid] = βf
+        end
         resid = [z[k] - Vf[k] * βf - Bw[k] * δw for k in 1:K]
 
         # sample α
@@ -122,28 +134,37 @@ function sample_model(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = nothing, βin
             Qα = σ²x[j]^(-1) * m[j] + σ²α[j]
             μsα = (σ²x[j]^(-1) * sum(x[j] - Bvx[j]*δv[j]))
             α[j] = Qα^(-1) * (μsα + randn())
-            α_samples[j, i] = α[j]
+            if saveiter
+                α_samples[j, saveid] = α[j]
+            end
         end
 
         # sample σ²y
         a_σ²y = sigma2_a_prior .+ n / 2
         b_σ²y = [sigma2_b_prior + sum(resid[k].^2) / 2 for k in 1:K]
         σ²y = rand.(InverseGamma.(a_σ²y, b_σ²y))
-        σ²y_samples[:, i] = σ²y
+        if saveiter
+            σ²y_samples[:, saveid] = σ²y
+        end
 
         # sample σ²x
         a_σ²x = sigma2_a_prior .+ m / 2
         b_σ²x = [sigma2_b_prior + sum((x[j] - Bvx[j]*δv[j] .- α[j]).^2) / 2 for j in 1:p]
         σ²x = rand.(InverseGamma.(a_σ²x, b_σ²x))
-        σ²x_samples[:, i] = σ²x
+        if saveiter
+            σ²x_samples[:, saveid] = σ²x
+        end
 
         # sample κv
         a_κ = kappa_a_prior .+ qv / 2
         b_κ = kappa_b_prior .+ (transpose.(δv) .* Pv .* δv) ./ 2
         κv = rand.(Gamma.(a_κ, 1 ./ b_κ))
-        κv_samples[:, i] = κv
+        if saveiter
+            κv_samples[:, saveid] = κv
+        end
     end
 
-    δw_samples, δv_samples, βf_samples, α_samples, σ²y_samples, σ²x_samples, κv_samples, z_samples
+    Dict("w" => δw_samples, "v" => δv_samples, "beta" => βf_samples, "alpha" => α_samples,
+        "sigma2_y" => σ²y_samples, "sigma2_x" => σ²x_samples, "kappav" => κv_samples, "z" => z_samples)
 end
 
