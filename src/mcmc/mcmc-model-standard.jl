@@ -68,6 +68,7 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
 
     # mcmc
     for i = 1:niter
+        println("Iteration $i:")
 
         # check if iteration should be saved
         saveiter = mcmcsave(i, burnin, thin)
@@ -96,6 +97,7 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
         μw =  CQw.UP \ (CQw.PtL \ aux)
         δw = μw + CQw.UP \ randn(qw)
         if saveiter
+            println("Iteration $i with saved sample $(saveid):")
             δw_samples[:, saveid] = δw
         end
         [resid[k] -= Bw[k] * δw for k in 1:K]
