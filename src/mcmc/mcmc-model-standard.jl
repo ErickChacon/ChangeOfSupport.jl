@@ -68,7 +68,6 @@ function sample_model_standard(y, x, Bw, Bvx, Bvy, Pw, Pv, κw, id; binit = noth
 
     # mcmc
     for i = 1:niter
-        println("Iteration $i:")
 
         # check if iteration should be saved
         saveiter = mcmcsave(i, burnin, thin)
