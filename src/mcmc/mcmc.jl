@@ -44,7 +44,7 @@ function sample_gam(y, X, P, σ², κ, niter = 10; fix_hyper = false)
     # out
 end
 
-function sample_gam_sparse(y, X, P, σ², κ, niter = 10; fix_hyper = false)
+function sample_gam_sparse(y, X, P, σ², κ; fix_hyper = false, nsamples = 10, burnin = 0, thin = 1)
     n, p = size(X)
     XtX = X' * X
 
@@ -53,28 +53,38 @@ function sample_gam_sparse(y, X, P, σ², κ, niter = 10; fix_hyper = false)
     kappa_a_prior = 0.001
     kappa_b_prior = 0.001
 
-    β_samples = zeros(p, niter)
-    σ²_samples = zeros(1, niter)
-    κ_samples = zeros(1, niter)
+    niter = mcmcniter(nsamples, burnin, thin)
+    β_samples = zeros(p, nsamples + 1)
+    σ²_samples = zeros(1, nsamples + 1)
+    κ_samples = zeros(1, nsamples + 1)
 
     σ²_samples[1, 1] = σ²
     κ_samples[1, 1] = κ
 
     # out = 1
 
-    for i = 2:niter
+    for i = 1:niter
+
+        # check if iteration should be saved
+        saveiter = mcmcsave(i, burnin, thin)
+        saveid = mcmcid(i, burnin, thin) + 1
+
         # sample β
         Qᵦ = XtX / σ² + κ * P
         CQᵦ = cholesky(Qᵦ)
         μᵦ =  CQᵦ.UP \ (CQᵦ.PtL \ (X'y / σ²))
         β = μᵦ + CQᵦ.UP \ randn(p)
-        β_samples[:, i] = β
+        if saveiter
+            β_samples[:, saveid] = β
+        end
 
         # sample σ²
         a_σ² = sigma2_a_prior + n / 2
         b_σ² = sigma2_b_prior + sum((y - X * β).^2) / 2
         σ² = rand(InverseGamma(a_σ², b_σ²))
-        σ²_samples[1, i] = σ²
+        if saveiter
+            σ²_samples[1, saveid] = σ²
+        end
 
         if !fix_hyper
             # sample κ
@@ -82,7 +92,10 @@ function sample_gam_sparse(y, X, P, σ², κ, niter = 10; fix_hyper = false)
             b_κ = kappa_b_prior + transpose(β) * P * β / 2
             κ = rand(Gamma(a_κ, 1 / b_κ))
         end
-        κ_samples[1, i] = κ
+        if saveiter
+            println("Iteration $i with saved sample $(saveid):")
+            κ_samples[1, saveid] = κ
+        end
     end
 
     β_samples, σ²_samples, κ_samples
