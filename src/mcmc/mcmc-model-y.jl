@@ -214,6 +214,6 @@ function sample_model_y_fixsigma(y, Bw, Pw, κw, id; binit = nothing, σ²yinit 
         end
     end
 
-    Dict("w" => δw_samples, "beta" => b_samples, "sigma2_y" => σ²y_samples, "z" => z_samples, "kw" => κw_samples)
+    Dict("w" => δw_samples, "beta" => b_samples, "sigma2_y" => σ²y_samples, "z" => z_samples, "κw" => κw_samples)
 end
 
